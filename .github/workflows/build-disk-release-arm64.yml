@@ -1,5 +1,5 @@
 ---
-name: Build disk images
+name: Build disk images (release - arm64)
 
 on:
   release:
