@@ -10,7 +10,8 @@ echo "Installing Regreet Theme."
 fetch https://github.com/dracula/gtk/archive/master.zip -O /tmp/regreet/theme.zip
 unzip -qq /tmp/regreet/theme.zip
 add "${shared}/themes/Dracula"
-mv /tmp/regreet/theme ${shared}/themes/Dracula
+mv /tmp/regreet/gtk-master ${shared}/themes/Dracula
+# It extracts under this name, unzip has no ability to respect naming.
 
 echo "Configuring Regreet."
 add "${shared}/greetd"
