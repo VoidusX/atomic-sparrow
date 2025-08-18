@@ -1,0 +1,7 @@
+background = 000000
+bold-is-bright = true
+background-opacity = 1
+foreground = ffffff
+window-decoration = false
+theme = konsolas
+gtk-adwaita = false

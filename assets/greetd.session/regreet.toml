@@ -1,0 +1,11 @@
+#[background]
+#path = "/usr/share/hyperbola/wallpapers/main-login.png"
+#fit = "Fill"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "Bibata-Modern-Classic"
+theme_name = "Dracula"
+
+[appearance]
+greeting_msg = "Welcome to Sparrow"
