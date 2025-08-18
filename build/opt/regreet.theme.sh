@@ -8,7 +8,7 @@ shared="/usr/share"
 echo "Installing Regreet Theme."
 # Our configuration relies on a third party theme not in COPR or fedora packages.
 fetch https://github.com/dracula/gtk/archive/master.zip -O /tmp/regreet/theme.zip
-unzip -qq /tmp/regreet/theme.zip -d /usr/share/themes/
+unzip -qq /tmp/regreet/theme.zip
 add "${shared}/themes/Dracula"
 mv /tmp/regreet/theme ${shared}/themes/Dracula
 
