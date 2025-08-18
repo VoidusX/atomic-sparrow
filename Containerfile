@@ -27,10 +27,10 @@ RUN --mount=type=bind,from=assets,source=/,target=/assets \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
-    cp /builder/aliases.sh /tmp/ \
-    mkdir -p /image-assets && cp -r /assets/* /image-assets/ \
-    mkdir -p /deps && cp -r /builder/deps/* /deps/ \
-    mkdir -p /tmp/opt && cp -r /builder/opt/* /tmp/opt/ \
+    cp /builder/aliases.sh /tmp/ && \
+    mkdir -p /image-assets && cp -r /assets/* /image-assets/ && \
+    mkdir -p /deps && cp -r /builder/deps/* /deps/ && \
+    mkdir -p /tmp/opt && cp -r /builder/opt/* /tmp/opt/ && \
     /builder/init.sh && \
     ostree container commit
 
