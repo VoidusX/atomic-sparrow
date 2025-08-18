@@ -7,7 +7,7 @@ source /tmp/aliases.sh
 
 # Variables
 skel="/etc/skel"
-assets="/tmp/assets"
+assets="/image-assets"
 shared="/usr/share"
 
 ### Install packages

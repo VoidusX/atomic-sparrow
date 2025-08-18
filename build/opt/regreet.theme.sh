@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-assets="/tmp/assets"
+assets="/image-assets"
 greetd_skeleton="/etc/greetd"
 shared="/usr/share"
 
