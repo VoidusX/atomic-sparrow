@@ -15,7 +15,7 @@ mv /tmp/regreet/gtk-master ${shared}/themes/Dracula
 
 echo "Configuring Regreet."
 add "${shared}/greetd"
-copy "${greetd_skeleton}/config.toml ${shared}/greetd/default-config.toml"
-rm "${shared}/greetd/config.toml"
-copy "${assets}/greetd.toml ${greetd_skeleton}/config.toml"
-copy-config "${assets}/greetd.session/* ${greetd_skeleton}/"
+copy "${greetd_skeleton}/config.toml" "${shared}/greetd/default-config.toml"
+rm "${greetd_skeleton}/config.toml"
+copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
+copy-config "${assets}/greetd.session/*" "${greetd_skeleton}/"

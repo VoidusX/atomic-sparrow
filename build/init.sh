@@ -21,7 +21,7 @@ modify-regreet
 
 # Set our default skeleton data for new user (They need to set up end-4 dotfiles)
 add "${skel}/.config"
-copy-config "${assets}/user.session/* ${skel}/.config/"
+copy-config "${assets}/user.session/*" "${skel}/.config/"
 
 # Enabling services not bound to build components
 insert podman.socket
