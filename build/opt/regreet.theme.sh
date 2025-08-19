@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-assets="/image-assets"
+assets="/imageAssets"
 greetd_skeleton="/etc/greetd"
 shared="/usr/share"
 
@@ -18,4 +18,4 @@ add "${shared}/greetd"
 copy "${greetd_skeleton}/config.toml" "${shared}/greetd/default-config.toml"
 rm "${greetd_skeleton}/config.toml"
 copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
-copy-config "${assets}/greetd.session/*" "${greetd_skeleton}/"
+copy-config "${assets}/greetd.session/"* "${greetd_skeleton}/"
