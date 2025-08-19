@@ -3,5 +3,5 @@ bold-is-bright = true
 background-opacity = 1
 foreground = ffffff
 window-decoration = false
-theme = konsolas
+theme = Konsolas
 gtk-adwaita = false
