@@ -25,7 +25,6 @@ modify-regreet
 
 # Set our default skeleton data for new user (They need to set up end-4 dotfiles)
 add "${skel}/.config"
-mkdir "${shared}/hypr"
 copy-config "${assets}/user.session/"* "${skel}/.config/"
 copy-config "${assets}/setup.session/hyprland.setup.conf" "${shared}/hypr/"
 
