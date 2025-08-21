@@ -20,7 +20,7 @@ install coreutils wl-clipboard xdg-utils curl fuzzel rsync wget ripgrep gojq npm
 install pavucontrol wireplumber libdbusmenu-gtk3-devel libdbusmenu playerctl cava
 
 # Misc tooling
-install yad scdoc ydotool tinyxml tinyxml2 tinyxml2-devel file-devel libwebp-devel libdrm-devel libgdm-devel pam-devel libsass-devel libsass
+install yad scdoc ydotool tinyxml tinyxml2 tinyxml2-devel file-devel libwebp-devel libdrm-devel libgbm-devel pam-devel libsass-devel libsass
 
 # end-4 dotfiles theming
 install gnome-themes-extra adw-gtk3-theme qt5ct qt6-qtwayland kcmshell6 qt5-qtwayland fontconfig jetbrains-mono-fonts gdouros-symbola-fonts lato-fonts darkly fish kitty starship \
