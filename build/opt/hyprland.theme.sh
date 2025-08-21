@@ -63,9 +63,9 @@ copy "/tmp/microtex-repo/build/LaTeX" "${shared}/factory/var/opt/MicroTeX"
 copy-config "/tmp/microtex-repo/build/res" "${shared}/factory/var/opt/MicroTeX"
 cd /
 
-## Upscayl
-wget -O /tmp/upscayl.rpm "$(curl -s https://api.github.com/repos/upscayl/upscayl/releases/latest | jq -r '.assets[] | select(.name | test("\\.rpm$")) | .browser_download_url')"
-install /tmp/upscayl.rpm
+## Upscayl (disabled because it requires /opt which ublue has broken)
+# wget -O /tmp/upscayl.rpm "$(curl -s https://api.github.com/repos/upscayl/upscayl/releases/latest | jq -r '.assets[] | select(.name | test("\\.rpm$")) | .browser_download_url')"
+# install /tmp/upscayl.rpm
 
 # Import the fedora end-4 dotfiles repository specifically for the installation process to modify.
 echo "Patching end-4 dotfiles for default post-install."
