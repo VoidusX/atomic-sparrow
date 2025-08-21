@@ -12,7 +12,8 @@ parse_log_level "info"
 dry_run=1
 startup_pause=1
 rebootable=0
-if [ "$parent" == "usr/share/sparrow-setup" ]; then
+
+if [ "$parent" == "/usr/share/hypr" ]; then
     dry_run=0
 fi
 
@@ -40,7 +41,7 @@ notice_window(){
     if [ "$ready" = "1" ]; then
         if [ $dry_run -eq 0 ]; then
             tput cvvis
-            command "bash <(curl -s https://raw.githubusercontent.com/EisregenHaha/fedora-hyprland/f42/setup.sh)" &
+            command "bash -c /usr/share/hypr/end-4_installer/setup.sh" &
             install_pid=$!
             wait $install_pid
             if [ $? -eq 0 ]; then
@@ -57,6 +58,76 @@ notice_window(){
     fi
 
 
+}
+
+bootc_update_window(){
+    tput civis
+    if [ $dry_run -eq 1 ]; then
+        print "${yellow}${black_highlight}Dry-run is enabled." "leak"
+    else
+        print "${yellow}${black_highlight}"
+    fi
+    print "${yellow_title}${black_highlight}" "center-leak" "Welcome To Sparrow"
+    print "${yellow_bar}${black_highlight}" "seperator"
+    print "${yellow}${black_highlight}" "leak"
+    print " You are updating Sparrow, the process should take a moment." "leak"
+    print " The system will reboot into the new update once it is done." "leak"
+    print ""
+
+    term_lines=$(tput lines)
+    best_position=$(($term_lines - 5))
+    loop_spinner_pos=$(($term_lines - 2))
+    tput cup $best_position 0
+
+    print "${update_tag}${black_highlight} System is being updated."
+    print "${white}${black_highlight}"
+    print "${white}${black_highlight}" "center" "Upgrading Sparrow.  "
+    print "${white}${black_highlight}"
+    print_end "${white}${black_highlight}"
+
+    spinner_focus=0
+    spinner=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    spinner_logic(){
+        if [ $spinner_focus -eq 9 ]; then
+            spinner_focus=0
+        else
+            spinner_focus=$(( $spinner_focus + 1 ))
+        fi
+    }
+
+    if [ $dry_run -eq 0 ]; then
+        sudo bootc update --apply --quiet &
+        update_pid=$!
+    fi
+
+    if [ $dry_run -eq 1 ]; then
+        sleep 10 &
+        update_pid=$!
+    fi
+
+    while kill -0 $update_pid 2>/dev/null; do
+        for i in {1..45}; do
+            sleep 0.015
+            spinner_logic
+            tput cup $loop_spinner_pos 0 # Theres a weird bug where terminal cursor is moved upwards, which doesn't happen in the other loops.
+            print_previous "${white}${black_highlight}" "center" "Upgrading Sparrow. ${spinner[spinner_focus]}"
+            tput cup $term_lines 0
+            print_override "${black_bar_bottom}${black_highlight}" "progress" $i "${black_highlight}${yellow_bar_bottom}" 45 # For outline bars
+        done
+        for i in {1..45}; do
+            sleep 0.015
+            spinner_logic
+            tput cup $loop_spinner_pos 0 # Theres a weird bug where terminal cursor is moved upwards, which doesn't happen in the other loops.
+            print_previous "${white}${black_highlight}" "center" "Upgrading Sparrow. ${spinner[spinner_focus]}"
+            tput cup $term_lines 0
+            print_override "${yellow_bar_bottom}${black_highlight}" "progress" $i "${black_highlight}${black_bar_bottom}" 45 # For outline bars
+        done
+    done
+    tput cup 0 0
+    print "${white}" # There is also a bug where the black highlight presists.
+    clear
+    tput cup 0 0
+    main_window
 }
 
 unimplemented_window(){
@@ -146,11 +217,11 @@ main_window(){
       installation_success_popup
     fi
 
-    actions=("Default (end-4)" "Custom" "Exit Installer")
+    actions=("Default (end-4)" "Custom" "Update System" "Exit Installer")
     action=$(list "Select which option to begin applying dotfiles:" "${actions[@]}")
     tput civis
 
-    if [ "$action" == "2" ]; then
+    if [ "$action" == "3" ]; then
       term_lines=$(tput lines)
       best_position=$(($term_lines - 5))
       tput cup $best_position 0
@@ -211,6 +282,10 @@ main_window(){
         unimplemented_window
     fi
 
+    if [ "$action" == "2" ]; then
+        bootc_update_window
+    fi
+
     if [ "$action" == "" ]; then
         term_lines=$(tput lines)
         best_position=$(($term_lines - 5))
@@ -242,6 +317,7 @@ yellow_bar="$(pick "yellow" "2" "strikethrough")"
 yellow_bar_bottom="$(pick "yellow" "2" "underline")"
 yellow_highlight="$(highlight "yellow")"
 cancel_tag="${black}${yellow_highlight}CANCEL${white}"
+update_tag="${black}${yellow_highlight}UPDATE${white}"
 fail_tag="${black}${red_highlight}FAIL${white}"
 error_tag="${black}${red_highlight}ERROR${white}"
 success_tag="${black}${green_highlight}SUCCESS${white}"

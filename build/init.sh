@@ -22,6 +22,7 @@ load-repos
 add-hyprland
 add-regreet
 modify-regreet
+modify-hyprland-default
 
 # Set our default skeleton data for new user (They need to set up end-4 dotfiles)
 add "${skel}/.config"
