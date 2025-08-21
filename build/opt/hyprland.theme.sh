@@ -58,9 +58,9 @@ mkdir /tmp/microtex-repo/build
 cd /tmp/microtex-repo/build
 cmake ..
 make -j32
-mkdir /opt/MicroTeX
-copy "/tmp/microtex-repo/build/LaTeX" /opt/MicroTeX
-copy-config "/tmp/microtex-repo/build/res" /opt/MicroTeX
+mkdir -p "${shared}/factory/var/opt/MicroTeX"
+copy "/tmp/microtex-repo/build/LaTeX" "${shared}/factory/var/opt/MicroTeX"
+copy-config "/tmp/microtex-repo/build/res" "${shared}/factory/var/opt/MicroTeX"
 cd /
 
 ## Upscayl
