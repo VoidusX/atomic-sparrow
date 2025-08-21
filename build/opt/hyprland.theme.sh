@@ -51,17 +51,17 @@ copy-config /tmp/gabarito-font/fonts/ttf/Gabarito*.ttf "${shared}/fonts/gabarito
 copy-config "/tmp/gabarito-font/OFL.txt" "${shared}/fonts/gabarito-fonts"
 fc-cache -fv
 
-## MicroTeX
-install cmake clang make
-git clone https://github.com/NanoMichael/MicroTeX.git /tmp/microtex-repo
-mkdir /tmp/microtex-repo/build
-cd /tmp/microtex-repo/build
-cmake ..
-make -j32
-mkdir -p "${shared}/factory/var/opt/MicroTeX"
-copy "/tmp/microtex-repo/build/LaTeX" "${shared}/factory/var/opt/MicroTeX"
-copy-config "/tmp/microtex-repo/build/res" "${shared}/factory/var/opt/MicroTeX"
-cd /
+## MicroTeX (disabled because it breaks the anaconda installer)
+# install cmake clang make
+# git clone https://github.com/NanoMichael/MicroTeX.git /tmp/microtex-repo
+# mkdir /tmp/microtex-repo/build
+# cd /tmp/microtex-repo/build
+# cmake ..
+# make -j32
+# mkdir -p "${shared}/factory/var/opt/MicroTeX"
+# copy "/tmp/microtex-repo/build/LaTeX" "${shared}/factory/var/opt/MicroTeX"
+# copy-config "/tmp/microtex-repo/build/res" "${shared}/factory/var/opt/MicroTeX"
+# cd /
 
 ## Upscayl (disabled because it requires /opt which ublue has broken)
 # wget -O /tmp/upscayl.rpm "$(curl -s https://api.github.com/repos/upscayl/upscayl/releases/latest | jq -r '.assets[] | select(.name | test("\\.rpm$")) | .browser_download_url')"
