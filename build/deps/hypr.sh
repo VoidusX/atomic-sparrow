@@ -38,7 +38,7 @@ nwg-dock-hyprland xdg-desktop-portal-gtk xdg-desktop-portal-kde \
 wlogout waybar nautilus pugixml rsync
 
 echo "Installing Hyprland. (3/3)"
-install bibata-cursor-theme uv ghostty fastfetch sox quickshell-git ocean-sound-theme
+install bibata-cursor-theme ghostty fastfetch sox quickshell-git ocean-sound-theme uv # If anaconda installer breaks, uv will be disabled entirely.
 
 # Bibata Cursors is the default cursor theme used by Sparrow.
 # Ghostty is the default terminal of hyprland image, used by Sparrow OOBE.

@@ -79,7 +79,7 @@ copy_dotfiles_smart() {
 run_full_install() {
     echo -e "${YELLOW}Starting full installation...${NC}"
     run_script "$FONTS_SCRIPT" ""     || { echo -e "${RED}❌ Failed: $FONTS_SCRIPT${NC}"; exit 1; }
-    run_script "$MANUAL_HELPER_SCRIPT" "" || { echo -e "${RED}❌ Failed: $MANUAL_HELPER_SCRIPT${NC}"; exit 1; }
+    #run_script "$MANUAL_HELPER_SCRIPT" "" || { echo -e "${RED}❌ Failed: $MANUAL_HELPER_SCRIPT${NC}"; exit 1; }
     copy_dotfiles_smart || { echo -e "${RED}❌ Failed: copy_dotfiles_smart${NC}"; exit 1; }
     fix_gtk_ownership || { echo -e "${RED}❌ Failed: fix_gtk_ownership${NC}"; exit 1; }
     echo -e "${GREEN}🎉 Full installation completed successfully! You can now reboot and select Hyprland at login.${NC}"
