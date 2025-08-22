@@ -6,7 +6,7 @@ patches="/tmp/opt/hyprland.theme.patches"
 
 echo "Setting up end-4 dotfiles for default post-install."
 # Python packages for UV enviornment
-install python3 python3-devel python3.12 python3.12-devel libsoup-devel
+install python3 python3-devel # python3.12 python3.12-devel libsoup-devel
 
 # Gnome GTK3/4 libraries
 install libadwaita-devel gtk-layer-shell-devel gtk3 gtksourceview3 gtksourceview3-devel gobject-introspection upower \
