@@ -6,34 +6,35 @@ patches="/tmp/opt/hyprland.theme.patches"
 
 echo "Setting up end-4 dotfiles for default post-install."
 # Python packages for UV enviornment
-install python3 python3-devel # python3.12 python3.12-devel libsoup-devel
+install --setopt=install_weak_deps=False python3 python3-devel python3.12 python3.12-devel libsoup-devel
 
-# Gnome GTK3/4 libraries
-install libadwaita-devel gtk-layer-shell-devel gtk3 gtksourceview3 gtksourceview3-devel gobject-introspection upower \
-gtksourceviewmm3-devel webp-pixbuf-loader gobject-introspection-devel gjs-devel pulseaudio-libs-devel \
-gnome-bluetooth bluez-cups bluez mate-polkit translate-shell
+# Gnome GTK3/4 libraries (disabled because it breaks anaconda installer)
+# install libadwaita-devel gtk-layer-shell-devel gtk3 gtksourceview3 gtksourceview3-devel gobject-introspection upower \
+# gtksourceviewmm3-devel webp-pixbuf-loader gobject-introspection-devel gjs-devel pulseaudio-libs-devel \
+# gnome-bluetooth bluez-cups bluez mate-polkit translate-shell
+install --setopt=install_weak_deps=False upower bluez-cups bluez mate-polkit translate-shell
 
 # Utilities
-install coreutils wl-clipboard xdg-utils curl fuzzel rsync wget ripgrep gojq npm meson typescript gjs axel eza brightnessctl ddcutil
+install --setopt=install_weak_deps=False wl-clipboard xdg-utils fuzzel rsync wget ripgrep gojq npm meson typescript gjs axel eza brightnessctl ddcutil
 
 # Audio/Media libraries
-install pavucontrol wireplumber libdbusmenu-gtk3-devel libdbusmenu playerctl cava
+install --setopt=install_weak_deps=False pavucontrol wireplumber playerctl cava #libdbusmenu-gtk3-devel libdbusmenu playerctl cava
 
 # Misc tooling
-install yad scdoc ydotool tinyxml tinyxml2 tinyxml2-devel file-devel libwebp-devel libdrm-devel libgbm-devel pam-devel libsass-devel libsass
+install --setopt=install_weak_deps=False yad scdoc ydotool tinyxml tinyxml2 tinyxml2-devel file-devel libwebp-devel libdrm-devel libgbm-devel pam-devel libsass-devel libsass
 
 # end-4 dotfiles theming
-install gnome-themes-extra adw-gtk3-theme qt5ct qt6-qtwayland kcmshell6 qt5-qtwayland fontconfig jetbrains-mono-fonts gdouros-symbola-fonts lato-fonts darkly fish kitty starship \
+install --setopt=install_weak_deps=False gnome-themes-extra adw-gtk3-theme qt5ct qt6-qtwayland qt5-qtwayland fontconfig jetbrains-mono-fonts gdouros-symbola-fonts lato-fonts darkly fish kitty starship \
 kvantum kvantum-qt5 libxdp-devel libxdp libportal google-rubik-fonts
 
 # Screenshot/Recording tools
-install swappy wf-recorder grim tesseract slurp
+install --setopt=install_weak_deps=False swappy wf-recorder grim tesseract slurp
 
 # Appstream & Web libaries
-install appstream-util libsoup3-devel
+install --setopt=install_weak_deps=False appstream-util libsoup3-devel
 
 # end-4 quickshell features
-install python-opencv plasma-nm kdialog bluedevil plasma-systemmonitor wtype matugen grimblast kde-material-you-colors mpvpaper ffmpeg
+install --setopt=install_weak_deps=False python-opencv plasma-nm kdialog bluedevil plasma-systemmonitor wtype matugen grimblast kde-material-you-colors mpvpaper ffmpeg
 
 # Get theme assets that don't come as a rpm needed by end-4
 ## OneUI v4 (end-4 fork)
