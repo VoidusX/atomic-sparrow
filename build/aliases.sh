@@ -5,6 +5,7 @@ alias add-hyprland="source /deps/hypr.sh"
 alias add-regreet="source /deps/regreet.sh"
 alias modify-regreet="source /tmp/opt/regreet.theme.sh"
 alias modify-hyprland-default="source /tmp/opt/hyprland.theme.sh"
+alias populate-hyprland-default="source /tmp/opt/hyprland.pkgs.sh"
 
 
 alias install="dnf5 -y install"
