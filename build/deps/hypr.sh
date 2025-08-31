@@ -34,11 +34,11 @@ echo "Installing Hyprland. (2/3)"
 # These are packages that allows support for different dotfile configurations other than end-4, though some end-4 required dependencies are found here.
 install rofi waypaper swww \
 cliphist nwg-look qt6ct \
-nwg-dock-hyprland xdg-desktop-portal-gtk \
+nwg-dock-hyprland xdg-desktop-portal-gtk xdg-desktop-portal-kde \
 wlogout waybar nautilus # pugixml rsync
 
 echo "Installing Hyprland. (3/3)"
-install bibata-cursor-theme ghostty fastfetch sox # quickshell-git ocean-sound-theme # uv # If anaconda installer breaks, uv will be disabled entirely.
+install bibata-cursor-theme ghostty fastfetch sox quickshell-git ocean-sound-theme # uv # If anaconda installer breaks, uv will be disabled entirely.
 
 # Bibata Cursors is the default cursor theme used by Sparrow.
 # Ghostty is the default terminal of hyprland image, used by Sparrow OOBE.
