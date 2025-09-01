@@ -23,7 +23,7 @@ add-hyprland
 add-regreet
 add-installer
 modify-regreet
-#modify-hyprland-default # There is a problem with the anaconda installer, tests do not indicate relationship to installed packages
+modify-hyprland-default # There is a problem with the anaconda installer, tests do not indicate relationship to installed packages
 
 # Set our default skeleton data for new user (They need to set up end-4 dotfiles)
 add "${skel}/.config"
