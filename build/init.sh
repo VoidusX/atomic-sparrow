@@ -21,17 +21,15 @@ ls -h -N -la "${assets}"/user.session/
 load-repos
 add-hyprland
 add-regreet
+add-installer
 modify-regreet
 #modify-hyprland-default # There is a problem with the anaconda installer, tests do not indicate relationship to installed packages
 
 # Set our default skeleton data for new user (They need to set up end-4 dotfiles)
 add "${skel}/.config"
-chmod +x "${assets}/setup.session/setup.lib/"*
 
 copy-config "${assets}/user.session/"* "${skel}/.config/"
 copy-config "${assets}/setup.session/hyprland.setup.conf" "${shared}/hypr/"
-copy-config "${assets}/setup.session/setup.sh" "${shared}/hypr/"
-copy-config "${assets}/setup.session/setup.lib" "${shared}/hypr/"
 
 # Enabling services not bound to build components
 insert podman.socket
