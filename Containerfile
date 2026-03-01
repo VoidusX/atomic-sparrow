@@ -6,21 +6,29 @@ COPY build /
 FROM scratch AS assets
 COPY assets /
 
-# Base Image
-FROM ghcr.io/ublue-os/base-main:latest
+# Base Image (Arch-based bootc)
+# arch-bootc handles bootc integration, ostree, and base system setup
+FROM bootcrew/arch-bootc:latest
 
 ## Other possible base images include:
-# FROM ghcr.io/ublue-os/bazzite:latest
-# FROM ghcr.io/ublue-os/bluefin-nvidia:stable
-#
-# ... and so on, here are more base images
-# Universal Blue Images: https://github.com/orgs/ublue-os/packages
+# CachyOS bootc image (when available)
 # Fedora base image: quay.io/fedora/fedora-bootc:41
 # CentOS base images: quay.io/centos-bootc/centos-bootc:stream10
 
+### [IM]MUTABLE /opt
+## Some bootable images, like Fedora, have /opt symlinked to /var/opt, in order to
+## make it mutable/writable for users. However, some packages write files to this directory,
+## thus its contents might be wiped out when bootc deploys an image, making it troublesome for
+## some packages. Eg, google-chrome, docker-desktop.
+##
+## Uncomment the following line if one desires to make /opt immutable and be able to be used
+## by the package manager.
+RUN rm /opt && mkdir /opt
+
+
+
 ### MODIFICATIONS
-## make modifications desired in your image and install packages by modifying the build.sh script
-## the following RUN directive does all the things required to run "build.sh" as recommended.
+## Install packages and configure the system
 
 RUN --mount=type=bind,from=assets,source=/,target=/assets \
     --mount=type=bind,from=builder,source=/,target=/builder \
@@ -29,11 +37,9 @@ RUN --mount=type=bind,from=assets,source=/,target=/assets \
     --mount=type=tmpfs,dst=/tmp \
     cp /builder/aliases.sh /tmp/ && \
     mkdir -p /imageAssets && cp -r /assets/* /imageAssets/ && \
-    mkdir -p /deps && cp -r /builder/deps/* /deps/ && \
-    mkdir -p /tmp/opt && cp -r /builder/opt/* /tmp/opt/ && \
-    /builder/init.sh && \
-    ostree container commit
+    /builder/init.sh
 
-### LINTING
-## Verify final image and contents are correct.
+# https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images
+LABEL containers.bootc 1
+
 RUN bootc container lint
