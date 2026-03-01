@@ -7,9 +7,9 @@ alias open="chown -R ${builduser}:${builduser}"
 alias attach="useradd -m -s /bin/bash ${builduser} && echo '${buildperm}' | tee -a /etc/sudoers"
 alias detach="grep -v '${buildperm}' /etc/sudoers | tee /etc/sudoers && userdel ${builduser}"
 
-alias install="wrap pacman -S --noconfirm"
+alias install="pacman -S --noconfirm"
 alias install-alt="wrap paru -S --noconfirm --skipreview"
-alias drop="wrap pacman -Rdd --noconfirm"
+alias drop="pacman -Rdd --noconfirm"
 alias insert="systemctl enable"
 
 alias copy="cp"

@@ -29,12 +29,12 @@ EOF
 
 pacman -Sy --noconfirm
 
-# Install build tools for AUR prior to the creation of the build user.
-pacman -S --noconfirm base-devel git
+# Install build tools for AUR.
+install base-devel git
 
 # Build and install paru (AUR helper)
 git clone https://aur.archlinux.org/paru.git /tmp/paru
-attach # this makes the build user, enables use of open, wrap, install, and install-alt commands
+attach # this makes the build user, enables use of open, wrap, and install-alt commands
 open /tmp/paru
 cd /tmp/paru
 wrap makepkg -si --noconfirm
@@ -81,7 +81,7 @@ copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
 drop paru
 sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
-detach # wrap and open will cease working here, installing and uninstalling packages no longer becomes possible beyond here.
+detach # wrap and open will cease working here, installing and uninstalling packages from paru no longer becomes possible beyond here.
 
 # Enable services
 insert greetd.service
