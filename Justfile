@@ -24,6 +24,7 @@ bootc *ARGS:
 
 generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
+    echo "ci={{ci}} tag={{tag}}"
     if [[ "{{ci}}" == "true" ]]; then
         CI_IMAGE="{{image_registry}}/{{image_name}}:{{tag}}"
         echo "Pulling CI image: ${CI_IMAGE}"
@@ -31,7 +32,7 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $t
     else
         CI_IMAGE="{{image_name}}:latest"
     fi
-    
+
     if [ ! -e "${base_dir}/bootable.img" ] ; then
         fallocate -l 20G "${base_dir}/bootable.img"
     fi
@@ -45,16 +46,19 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $t
 
 build-qcow2 $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
+    echo "ci={{ci}} tag={{tag}}"
     just generate-bootable-image ci={{ci}} tag={{tag}}
     qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
 
 build-raw $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
+    echo "ci={{ci}} tag={{tag}}"
     just generate-bootable-image ci={{ci}} tag={{tag}}
     cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
 
 build-iso $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
+    echo "ci={{ci}} tag={{tag}}"
     just generate-bootable-image ci={{ci}} tag={{tag}}
     mkdir -p "${base_dir}/mnt"
     sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
