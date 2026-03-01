@@ -187,27 +187,23 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
   build_disks:
-    name: Build disk images
+    name: Build sparrow-${{ matrix.arch }}.${{ matrix.disk-type }}
     needs: build_push
     if: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - output_name: atomic-sparrow-x86_64-qcow
-            disk-type: qcow2
+          - disk-type: qcow2
             os: ubuntu-24.04
             arch: amd64
-          - output_name: atomic-sparrow-arm64-qcow
-            disk-type: qcow2
+          - disk-type: qcow2
             os: ubuntu-24.04-arm
             arch: arm64
-          - output_name: atomic-sparrow-x86_64-iso
-            disk-type: iso
+          - disk-type: iso
             os: ubuntu-24.04
             arch: amd64
-          - output_name: atomic-sparrow-arm64-iso
-            disk-type: iso
+          - disk-type: iso
             os: ubuntu-24.04-arm
             arch: arm64
     runs-on: ${{ matrix.os }}
