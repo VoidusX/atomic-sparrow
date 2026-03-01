@@ -193,15 +193,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        disk-type: ["qcow2", "iso"]
         include:
-          - os: ubuntu-24.04
+          - output_name: atomic-sparrow-x86_64-qcow
+            disk-type: qcow2
+            os: ubuntu-24.04
             arch: amd64
-            output_name: atomic-sparrow-x86_64
-          # ARM64 builds on native ARM runner
-          - os: ubuntu-24.04-arm
+          - output_name: atomic-sparrow-arm64-qcow
+            disk-type: qcow2
+            os: ubuntu-24.04-arm
             arch: arm64
-            output_name: atomic-sparrow-arm64
+          - output_name: atomic-sparrow-x86_64-iso
+            disk-type: iso
+            os: ubuntu-24.04
+            arch: amd64
+          - output_name: atomic-sparrow-arm64-iso
+            disk-type: iso
+            os: ubuntu-24.04-arm
+            arch: arm64
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
