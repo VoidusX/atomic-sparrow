@@ -185,3 +185,79 @@ jobs:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+
+  build_disks:
+    name: Build disk images
+    needs: build_push
+    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        disk-type: ["qcow2", "iso"]
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
+      - name: Build qcow2 image
+        if: matrix.disk-type == 'qcow2'
+        run: |
+          just build-qcow2 --ci --tag=${{ env.DEFAULT_TAG }}
+
+      - name: Build ISO image
+        if: matrix.disk-type == 'iso'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso
+          just build-iso --ci --tag=${{ env.DEFAULT_TAG }}
+
+      - name: Rename and Checksum
+        id: post-build
+        run: |
+          mkdir -p output
+          OUTPUT_DIRECTORY="$(realpath output)"
+          if [[ "${{ matrix.disk-type }}" == "qcow2" ]]; then
+            mv sparrow.qcow2 output/sparrow-dev.qcow2
+            (cd output && sha256sum sparrow-dev.qcow2 | tee sparrow-dev.qcow2-CHECKSUM)
+          elif [[ "${{ matrix.disk-type }}" == "iso" ]]; then
+            mv sparrow.iso output/sparrow-dev.iso
+            (cd output && sha256sum sparrow-dev.iso | tee sparrow-dev.iso-CHECKSUM)
+          fi
+          echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload disk images and Checksum to Job Artifacts
+        if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          path: ${{ steps.post-build.outputs.output-directory }}
+          if-no-files-found: error
+          retention-days: 0
+          compression-level: 0
+          overwrite: true
+
+      - name: Upload to S3
+        if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          RCLONE_CONFIG_S3_TYPE: s3
+          RCLONE_CONFIG_S3_PROVIDER: ${{ secrets.S3_PROVIDER }}
+          RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
+          RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          SOURCE_DIR: ${{ steps.post-build.outputs.output-directory }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rclone
+          rclone copy $SOURCE_DIR S3:${{ secrets.S3_BUCKET_NAME }}

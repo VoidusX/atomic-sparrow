@@ -1,6 +1,6 @@
 image_name := env("IMAGE_NAME", "atomic-sparrow")
 image_tag := env("DEFAULT_TAG", "latest")
-#export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
+image_registry := env("IMAGE_REGISTRY", "ghcr.io")
 
 base_dir := env("BUILD_BASE_DIR", ".")
 filesystem := env("BUILD_FILESYSTEM", "ext4")
@@ -22,27 +22,40 @@ bootc *ARGS:
         -v "{{base_dir}}:/data" \
         "{{image_name}}:{{image_tag}}" bootc {{ARGS}}
 
-generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
+generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
+    if [[ "{{ci}}" == "true" ]]; then
+        CI_IMAGE="{{image_registry}}/{{image_name}}:{{tag}}"
+        echo "Pulling CI image: ${CI_IMAGE}"
+        sudo {{container_runtime}} pull "${CI_IMAGE}" || true
+    else
+        CI_IMAGE="{{image_name}}:latest"
+    fi
+    
     if [ ! -e "${base_dir}/bootable.img" ] ; then
         fallocate -l 20G "${base_dir}/bootable.img"
     fi
-    just bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe --bootloader systemd
+    sudo {{container_runtime}} run \
+        --rm --privileged --pid=host \
+        {{options}} \
+        -v /dev:/dev \
+        -e RUST_LOG=debug \
+        -v "{{base_dir}}:/data" \
+        "${CI_IMAGE}" bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "{{filesystem}}" --wipe --bootloader systemd
 
-build-qcow2 $base_dir=base_dir:
+build-qcow2 $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
-    just generate-bootable-image
+    just generate-bootable-image ci={{ci}} tag={{tag}}
     qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
 
-build-raw $base_dir=base_dir:
+build-raw $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
-    just generate-bootable-image
+    just generate-bootable-image ci={{ci}} tag={{tag}}
     cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
 
-build-iso $base_dir=base_dir:
+build-iso $base_dir=base_dir $ci="false" $tag=image_tag:
     #!/usr/bin/env bash
-    just generate-bootable-image
-    # Mount the raw image and create ISO from it
+    just generate-bootable-image ci={{ci}} tag={{tag}}
     mkdir -p "${base_dir}/mnt"
     sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
     sudo mkisofs -o "${base_dir}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "${base_dir}/mnt"
