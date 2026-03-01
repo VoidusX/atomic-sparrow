@@ -189,11 +189,19 @@ jobs:
   build_disks:
     name: Build disk images
     needs: build_push
-    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     strategy:
       fail-fast: false
       matrix:
         disk-type: ["qcow2", "iso"]
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+            output_name: atomic-sparrow-x86_64
+          # ARM64 builds on native ARM runner
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            output_name: atomic-sparrow-arm64
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
       packages: read
@@ -215,6 +223,7 @@ jobs:
         env:
           CI: "true"
           TAG: ${{ env.DEFAULT_TAG }}
+          PLATFORM: ${{ matrix.arch }}
         run: |
           just build-qcow2
 
@@ -223,6 +232,7 @@ jobs:
         env:
           CI: "true"
           TAG: ${{ env.DEFAULT_TAG }}
+          PLATFORM: ${{ matrix.arch }}
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso

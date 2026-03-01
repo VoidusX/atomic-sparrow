@@ -7,6 +7,8 @@ filesystem := env("BUILD_FILESYSTEM", "ext4")
 selinux := env("BUILD_SELINUX", "true")
 
 ci := env("CI", "false")
+tag := env("TAG", image_tag)
+platform := env("PLATFORM", env("RUNNER_ARCH", "arm64"))
 
 options := if selinux == "true" { "-v /var/lib/containers:/var/lib/containers:Z -v /etc/containers:/etc/containers:Z -v /sys/fs/selinux:/sys/fs/selinux --security-opt label=type:unconfined_t" } else { "-v /var/lib/containers:/var/lib/containers -v /etc/containers:/etc/containers" }
 container_runtime := env("CONTAINER_RUNTIME", `command -v podman >/dev/null 2>&1 && echo podman || echo docker`)
@@ -27,9 +29,11 @@ bootc *ARGS:
 generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
     #!/usr/bin/env bash
     if [[ "{{ci}}" == "true" ]]; then
-        CI_IMAGE="{{image_registry}}/{{image_name}}:{{image_tag}}"
-        echo "Pulling CI image: ${CI_IMAGE}"
-        sudo {{container_runtime}} pull "${CI_IMAGE}" || true
+        CI_REGISTRY_LOWER=$(echo "{{image_registry}}" | tr '[:upper:]' '[:lower:]')
+        CI_NAME_LOWER=$(echo "{{image_name}}" | tr '[:upper:]' '[:lower:]')
+        CI_IMAGE="${CI_REGISTRY_LOWER}/${CI_NAME_LOWER}:{{tag}}"
+        echo "Pulling CI image: ${CI_IMAGE} with arch: linux/${platform}"
+        sudo {{container_runtime}} pull --platform "linux/{{platform}}" "${CI_IMAGE}" || true
     else
         CI_IMAGE="{{image_name}}:latest"
     fi
