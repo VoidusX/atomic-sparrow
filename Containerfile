@@ -8,7 +8,7 @@ COPY assets /
 
 # Base Image (Arch-based bootc)
 # arch-bootc handles bootc integration, ostree, and base system setup
-FROM bootcrew/arch-bootc:latest
+FROM ghcr.io/bootcrew/arch-bootc:latest
 
 ## Other possible base images include:
 # CachyOS bootc image (when available)
