@@ -13,19 +13,22 @@ pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 pacman-key --lsign-key 3056513887B78AEB
 pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 
-pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
-pacman-key --lsign-key F3B607488DB35A47
-pacman -U --noconfirm \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-22-1-any.pkg.tar.zst'
+# Currently there is no possible way to swap kernels with a preserved initramfs.
+# A fork is planned on arch-bootc specifically using cachyos-v3
+# pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+# pacman-key --lsign-key F3B607488DB35A47
+# pacman -U --noconfirm \
+#     'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+#     'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-22-1-any.pkg.tar.zst'
 cat >> /etc/pacman.conf << 'EOF'
 
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
-
-[cachyos]
-Include = /etc/pacman.d/cachyos-mirrorlist
 EOF
+# DISABLED DUE TO INITRAMFS ISSUE, see above regarding cachyos mirrorlist
+# [cachyos]
+# Include = /etc/pacman.d/cachyos-mirrorlist
+# EOF
 
 pacman -Sy --noconfirm
 
@@ -40,10 +43,11 @@ cd /tmp/paru
 wrap makepkg -si --noconfirm
 cd /
 
+# DISABLED DUE TO INITRAMFS ISSUE, see above regarding cachyos mirrorlist
 # Install CachyOS kernel (replaces default arch kernel)
 # This is priority #1 to prevent packages breaking from below.
 # we need to remove the vanilla kernel first, to prevent loss of the initramfs from dracut.
-install linux-cachyos linux-cachyos-headers
+#install linux-cachyos linux-cachyos-headers
 
 # Install desktop shell
 install-alt dms-shell-bin
@@ -83,19 +87,22 @@ drop paru
 sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
 detach # wrap and open will cease working here, installing and uninstalling packages from paru no longer becomes possible beyond here.
-pacman -Rs --noconfirm linux # this is required by bootc as only 1 kernel is allowed.
+systemd-tmpfiles --clean # ensure that the detatched build user is removed from tmpfiles.
 
-# for some stupid reason, the vanilla kernel purges the initramfs entirely.
-# so we are simply regenerating it entirely, can we not delete someone else's initramfs please.
-KVER=$(ls /usr/lib/modules/ | grep cachyos | head -1)
-INITRAMFS="/boot/initramfs-${KVER}.img"
-if [[ -f "${INITRAMFS}" ]]; then
-    echo "Found existing initramfs: ${INITRAMFS}"
-else
-    echo "There is no initramfs present."
-fi
-echo "Regenerating initramfs for kernel: ${KVER}"
-dracut --force "${INITRAMFS}" "${KVER}"
+# DISABLED DUE TO INITRAMFS ISSUE, see above regarding cachyos mirrorlist
+# pacman -Rs --noconfirm linux # this is required by bootc as only 1 kernel is allowed.
+
+# # for some stupid reason, the vanilla kernel purges the initramfs entirely.
+# # so we are simply regenerating it entirely, can we not delete someone else's initramfs please.
+# KVER=$(ls /usr/lib/modules/ | grep cachyos | head -1)
+# INITRAMFS="/boot/initramfs-${KVER}.img"
+# if [[ -f "${INITRAMFS}" ]]; then
+#     echo "Found existing initramfs: ${INITRAMFS}"
+# else
+#     echo "There is no initramfs present."
+# fi
+# echo "Regenerating initramfs for kernel: ${KVER}"
+# dracut --force "${INITRAMFS}" "${KVER}"
 
 # Enable services
 insert greetd.service
