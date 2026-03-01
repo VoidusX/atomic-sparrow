@@ -32,11 +32,9 @@ pacman -Sy --noconfirm
 # Install build tools for AUR
 install base-devel git
 
-# Setup the build user for paru installation.
-useradd -m -s /bin/bash oci-build
-
 # Build and install paru (AUR helper)
 git clone https://aur.archlinux.org/paru.git /tmp/paru
+attach # this makes the build user, enables use of open and wrap commands
 open /tmp/paru
 cd /tmp/paru
 wrap makepkg -si --noconfirm
@@ -83,9 +81,7 @@ copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
 drop paru
 sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
-
-# Remove the oci-build user.
-userdel oci-build
+detach # wrap and open will cease working here.
 
 # Enable services
 insert greetd.service
