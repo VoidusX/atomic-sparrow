@@ -39,14 +39,20 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
         CI_IMAGE="{{image_name}}:latest"
     fi
 
-    echo "Creating bootable image reference."
-    if [ ! -e "${base_dir}/bootable.img" ] ; then
-        fallocate -l 20G "${base_dir}/bootable.img"
+    echo "Creating empty bootable image."
+    if [ ! -e "{{base_dir}}/bootable.img" ] ; then
+        fallocate -l 20G "{{base_dir}}/bootable.img"
     fi
     echo "SELinux: {{selinux}}"
     echo "Container Runtime: {{container_runtime}}"
     echo "Filesystem Type: {{filesystem}}"
     echo "Sparrow Version: {{image_tag}}"
+    echo "Image Available: $([ -f "{{base_dir}}/bootable.img" ] && echo "Y" || echo "N")"
+    if [ ! -f "{{base_dir}}/bootable.img" ]; then
+        echo "Bootable image failed to generate, recipe terminated."
+        exit 120
+    fi
+
     sudo {{container_runtime}} run \
         --rm --privileged --pid=host \
         {{options}} \
@@ -54,21 +60,40 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
         -e RUST_LOG=debug \
         -v "{{base_dir}}:/data" \
         "${CI_IMAGE}" bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "{{filesystem}}" --wipe --bootloader systemd
+    echo "sparrow/{{platform}} has been installed to bootable image. The image is located at: {{base_dir}}/bootable.img"
 
 build-qcow2 $base_dir=base_dir:
     #!/usr/bin/env bash
     just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
+    qemu-img convert -O qcow2 "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.qcow2"
 
 build-raw $base_dir=base_dir:
     #!/usr/bin/env bash
     just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
+    cp "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.raw"
 
 build-iso $base_dir=base_dir:
     #!/usr/bin/env bash
     just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    mkdir -p "${base_dir}/mnt"
-    sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
-    sudo mkisofs -o "${base_dir}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "${base_dir}/mnt"
-    sudo umount "${base_dir}/mnt"
+    mkdir -p "{{base_dir}}/mnt"
+    sudo mount -o loop "{{base_dir}}/bootable.img" "{{base_dir}}/mnt"
+    sudo mkisofs -o "{{base_dir}}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "{{base_dir}}/mnt"
+    sudo umount "{{base_dir}}/mnt"
+
+lint:
+    #!/usr/bin/env bash
+    command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck not found"; exit 1; }
+    find . -iname '*.sh' -type f -exec shellcheck {} \;
+
+format:
+    #!/usr/bin/env bash
+    command -v shfmt >/dev/null 2>&1 || { echo "shfmt not found"; exit 1; }
+    find . -iname '*.sh' -type f -exec shfmt -w {} \;
+
+check:
+    #!/usr/bin/env bash
+    just --check
+
+fix:
+    #!/usr/bin/env bash
+    just --fmt
