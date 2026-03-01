@@ -35,12 +35,18 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
         echo "Pulling CI image: ${CI_IMAGE} with arch: linux/{{platform}}"
         sudo {{container_runtime}} pull --platform "linux/{{platform}}" "${CI_IMAGE}" || true
     else
+        echo "Using local image."
         CI_IMAGE="{{image_name}}:latest"
     fi
 
+    echo "Creating bootable image reference."
     if [ ! -e "${base_dir}/bootable.img" ] ; then
         fallocate -l 20G "${base_dir}/bootable.img"
     fi
+    echo "SELinux: {{selinux}}"
+    echo "Container Runtime: {{container_runtime}}"
+    echo "Filesystem Type: {{filesystem}}"
+    echo "Sparrow Version: {{image_tag}}"
     sudo {{container_runtime}} run \
         --rm --privileged --pid=host \
         {{options}} \
@@ -51,17 +57,17 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
 
 build-qcow2 $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
     qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
 
 build-raw $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
     cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
 
 build-iso $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
     mkdir -p "${base_dir}/mnt"
     sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
     sudo mkisofs -o "${base_dir}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "${base_dir}/mnt"
