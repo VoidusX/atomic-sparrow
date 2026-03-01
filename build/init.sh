@@ -32,11 +32,14 @@ pacman -Sy --noconfirm
 # Install build tools for AUR
 install base-devel git
 
+# Setup the build user for paru installation.
+useradd -m -s /bin/bash oci-build
+
 # Build and install paru (AUR helper)
 cd /tmp
 git clone https://aur.archlinux.org/paru.git
 cd paru
-makepkg -si --noconfirm
+runuser -u oci-build -- makepkg -si --noconfirm
 cd /
 
 # Install CachyOS kernel (replaces default arch kernel)
@@ -80,6 +83,9 @@ copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
 drop paru
 sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
+
+# Remove the oci-build user.
+userdel oci-build
 
 # Enable services
 insert greetd.service
