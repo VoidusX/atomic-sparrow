@@ -36,10 +36,10 @@ install base-devel git
 useradd -m -s /bin/bash oci-build
 
 # Build and install paru (AUR helper)
-cd /tmp
-git clone https://aur.archlinux.org/paru.git
-cd paru
-runuser -u oci-build -- makepkg -si --noconfirm
+git clone https://aur.archlinux.org/paru.git /tmp/paru
+open /tmp/paru
+cd /tmp/paru
+wrap makepkg -si --noconfirm
 cd /
 
 # Install CachyOS kernel (replaces default arch kernel)
