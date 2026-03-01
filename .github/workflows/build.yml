@@ -246,15 +246,17 @@ jobs:
 
       - name: Rename and Checksum
         id: post-build
+        env:
+          ARCH: ${{ matrix.arch }}
         run: |
           mkdir -p output
           OUTPUT_DIRECTORY="$(realpath output)"
           if [[ "${{ matrix.disk-type }}" == "qcow2" ]]; then
-            mv sparrow.qcow2 output/sparrow-dev.qcow2
-            (cd output && sha256sum sparrow-dev.qcow2 | tee sparrow-dev.qcow2-CHECKSUM)
+            mv sparrow.qcow2 output/sparrow-$ARCH.qcow2
+            (cd output && sha256sum sparrow-$ARCH.qcow2 | tee sparrow-$ARCH.qcow2-CHECKSUM)
           elif [[ "${{ matrix.disk-type }}" == "iso" ]]; then
-            mv sparrow.iso output/sparrow-dev.iso
-            (cd output && sha256sum sparrow-dev.iso | tee sparrow-dev.iso-CHECKSUM)
+            mv sparrow.iso output/sparrow-$ARCH.iso
+            (cd output && sha256sum sparrow-$ARCH.iso | tee sparrow-$ARCH.iso-CHECKSUM)
           fi
           echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
 
