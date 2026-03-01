@@ -42,6 +42,7 @@ cd /
 
 # Install CachyOS kernel (replaces default arch kernel)
 # This is priority #1 to prevent packages breaking from below.
+# we need to remove the vanilla kernel first, to prevent loss of the initramfs from dracut.
 install linux-cachyos linux-cachyos-headers
 
 # Install desktop shell
@@ -83,6 +84,18 @@ sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
 detach # wrap and open will cease working here, installing and uninstalling packages from paru no longer becomes possible beyond here.
 pacman -Rs --noconfirm linux # this is required by bootc as only 1 kernel is allowed.
+
+# for some stupid reason, the vanilla kernel purges the initramfs entirely.
+# so we are simply regenerating it entirely, can we not delete someone else's initramfs please.
+KVER=$(ls /usr/lib/modules/ | grep cachyos | head -1)
+INITRAMFS="/boot/initramfs-${KVER}.img"
+if [[ -f "${INITRAMFS}" ]]; then
+    echo "Found existing initramfs: ${INITRAMFS}"
+else
+    echo "There is no initramfs present."
+fi
+echo "Regenerating initramfs for kernel: ${KVER}"
+dracut --force "${INITRAMFS}" "${KVER}"
 
 # Enable services
 insert greetd.service

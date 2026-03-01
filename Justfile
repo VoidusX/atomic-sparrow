@@ -57,17 +57,17 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
 
 build-qcow2 $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
     qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
 
 build-raw $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
     cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
 
 build-iso $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 1)
+    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
     mkdir -p "${base_dir}/mnt"
     sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
     sudo mkisofs -o "${base_dir}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "${base_dir}/mnt"
