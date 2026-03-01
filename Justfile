@@ -6,6 +6,8 @@ base_dir := env("BUILD_BASE_DIR", ".")
 filesystem := env("BUILD_FILESYSTEM", "ext4")
 selinux := env("BUILD_SELINUX", "true")
 
+ci := env("CI", "false")
+
 options := if selinux == "true" { "-v /var/lib/containers:/var/lib/containers:Z -v /etc/containers:/etc/containers:Z -v /sys/fs/selinux:/sys/fs/selinux --security-opt label=type:unconfined_t" } else { "-v /var/lib/containers:/var/lib/containers -v /etc/containers:/etc/containers" }
 container_runtime := env("CONTAINER_RUNTIME", `command -v podman >/dev/null 2>&1 && echo podman || echo docker`)
 
@@ -22,11 +24,10 @@ bootc *ARGS:
         -v "{{base_dir}}:/data" \
         "{{image_name}}:{{image_tag}}" bootc {{ARGS}}
 
-generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $tag=image_tag:
+generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
     #!/usr/bin/env bash
-    echo "ci={{ci}} tag={{tag}}"
     if [[ "{{ci}}" == "true" ]]; then
-        CI_IMAGE="{{image_registry}}/{{image_name}}:{{tag}}"
+        CI_IMAGE="{{image_registry}}/{{image_name}}:{{image_tag}}"
         echo "Pulling CI image: ${CI_IMAGE}"
         sudo {{container_runtime}} pull "${CI_IMAGE}" || true
     else
@@ -44,22 +45,19 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem $ci="false" $t
         -v "{{base_dir}}:/data" \
         "${CI_IMAGE}" bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "{{filesystem}}" --wipe --bootloader systemd
 
-build-qcow2 $base_dir=base_dir $ci="false" $tag=image_tag:
+build-qcow2 $base_dir=base_dir:
     #!/usr/bin/env bash
-    echo "ci={{ci}} tag={{tag}}"
-    just generate-bootable-image ci={{ci}} tag={{tag}}
+    just generate-bootable-image
     qemu-img convert -O qcow2 "${base_dir}/bootable.img" "${base_dir}/sparrow.qcow2"
 
-build-raw $base_dir=base_dir $ci="false" $tag=image_tag:
+build-raw $base_dir=base_dir:
     #!/usr/bin/env bash
-    echo "ci={{ci}} tag={{tag}}"
-    just generate-bootable-image ci={{ci}} tag={{tag}}
+    just generate-bootable-image
     cp "${base_dir}/bootable.img" "${base_dir}/sparrow.raw"
 
-build-iso $base_dir=base_dir $ci="false" $tag=image_tag:
+build-iso $base_dir=base_dir:
     #!/usr/bin/env bash
-    echo "ci={{ci}} tag={{tag}}"
-    just generate-bootable-image ci={{ci}} tag={{tag}}
+    just generate-bootable-image
     mkdir -p "${base_dir}/mnt"
     sudo mount -o loop "${base_dir}/bootable.img" "${base_dir}/mnt"
     sudo mkisofs -o "${base_dir}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "${base_dir}/mnt"

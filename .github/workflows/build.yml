@@ -212,15 +212,21 @@ jobs:
 
       - name: Build qcow2 image
         if: matrix.disk-type == 'qcow2'
+        env:
+          CI: "true"
+          TAG: ${{ env.DEFAULT_TAG }}
         run: |
-          just build-qcow2 --ci --tag=${{ env.DEFAULT_TAG }}
+          just build-qcow2
 
       - name: Build ISO image
         if: matrix.disk-type == 'iso'
+        env:
+          CI: "true"
+          TAG: ${{ env.DEFAULT_TAG }}
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso
-          just build-iso --ci --tag=${{ env.DEFAULT_TAG }}
+          just build-iso
 
       - name: Rename and Checksum
         id: post-build
