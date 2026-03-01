@@ -189,6 +189,7 @@ jobs:
   build_disks:
     name: Build disk images
     needs: build_push
+    if: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
