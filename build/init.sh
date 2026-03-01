@@ -9,16 +9,21 @@ shared="/usr/share"
 
 # Setup repositories
 pacman-key --init
-pacman-key --keyserver hkps://keyserver.chaotic.cx --recv-key 3056513887B78A9D 3056513887B78A9D || true
-pacman-key --lsign 3056513887B78A9D
+pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+pacman-key --lsign-key 3056513887B78AEB
+pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key F3B607488DB35A47
+sudo pacman -U 'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' 'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-18-1-any.pkg.tar.zst'
 
 cat >> /etc/pacman.conf << 'EOF'
 
 [chaotic-aur]
-Server = https://repo.chaotic.cx/$arch
+Include = /etc/pacman.d/chaotic-mirrorlist
 
 [cachyos]
-Server = https://mirror.cachyos.org/$arch/$repo
+Include = /etc/pacman.d/cachyos-mirrorlist
 EOF
 
 pacman -Sy --noconfirm
