@@ -82,6 +82,7 @@ drop paru
 sed -i '/\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
 sed -i '/\[cachyos\]/,/^$/d' /etc/pacman.conf
 detach # wrap and open will cease working here, installing and uninstalling packages from paru no longer becomes possible beyond here.
+pacman -Rs --noconfirm linux # this is required by bootc as only 1 kernel is allowed.
 
 # Enable services
 insert greetd.service
