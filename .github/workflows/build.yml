@@ -37,6 +37,7 @@ jobs:
             arch: amd64
           - platform: ubuntu-24.04-arm
             arch: arm64
+    continue-on-error: true
     runs-on: ${{ matrix.platform }}
 
     permissions:
@@ -195,9 +196,21 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
+  verify_push:
+    needs: [build_push]
+    runs-on: ubuntu-24.04
+    if: always()
+    steps:
+      - name: Check if both matrix jobs failed
+        run: |
+          if [[ "$RUNNING_JOB" == "ubuntu-24.04" ]] && [[ "$JOB_STATUS" == "failure" ]]; then
+            echo "Image builds for both amd64 and arm64 failed, disk formats cannot be made."
+            exit 1
+          fi
+
   build_disks:
     name: Build sparrow-${{ matrix.arch }}.${{ matrix.disk-type }}
-    needs: build_push
+    needs: verify_push
     if: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
