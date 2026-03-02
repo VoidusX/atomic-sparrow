@@ -245,6 +245,7 @@ jobs:
       - name: Install just
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+          sudo apt-get update
 
       - name: Build qcow2 image
         if: matrix.disk-type == 'qcow2'
@@ -253,6 +254,7 @@ jobs:
           TAG: ${{ env.DEFAULT_TAG }}
           PLATFORM: ${{ matrix.arch }}
         run: |
+          sudo apt-get install -y qemu-utils
           just build-qcow2
 
       - name: Build ISO image
@@ -262,7 +264,7 @@ jobs:
           TAG: ${{ env.DEFAULT_TAG }}
           PLATFORM: ${{ matrix.arch }}
         run: |
-          sudo apt-get update
+
           sudo apt-get install -y xorriso
           just build-iso
 
