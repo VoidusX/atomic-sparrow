@@ -28,8 +28,16 @@ concurrency:
 
 jobs:
   build_push:
-    name: Build and push image
-    runs-on: ubuntu-24.04
+    name: Build & Push sparrow/${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-24.04
+            arch: amd64
+          - platform: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.platform }}
 
     permissions:
       contents: read
