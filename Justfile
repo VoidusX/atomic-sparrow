@@ -60,12 +60,24 @@ generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
         -e RUST_LOG=debug \
         -v "{{base_dir}}:/data" \
         "${CI_IMAGE}" bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "{{filesystem}}" --wipe --bootloader systemd
-    echo "sparrow/{{platform}} has been installed to bootable image. The image is located at: {{base_dir}}/bootable.img"
+    if [[ "$?" == "0" ]]; then
+        echo "sparrow/{{platform}} has been installed to bootable image. The image is located at: {{base_dir}}/bootable.img"
+    else
+        echo "failed to build bootable image, error code: $?"
+        exit $?
+    fi
 
 build-qcow2 $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    qemu-img convert -O qcow2 "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.qcow2"
+    just generate-bootable-image
+    if [[ "$?" == "0" ]]; then
+        echo "Beginning qcow2 conversion process."
+        qemu-img convert -O qcow2 "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.qcow2"
+        echo "sparrow.qcow2 has been generated. It is located at {{base_dir}}/sparrow.qcow2"
+    else
+        echo "a core recipe failed with a error, cannot proceed."
+        exit 121
+    fi
 
 build-raw $base_dir=base_dir:
     #!/usr/bin/env bash
@@ -74,11 +86,19 @@ build-raw $base_dir=base_dir:
 
 build-iso $base_dir=base_dir:
     #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    mkdir -p "{{base_dir}}/mnt"
-    sudo mount -o loop "{{base_dir}}/bootable.img" "{{base_dir}}/mnt"
-    sudo mkisofs -o "{{base_dir}}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "{{base_dir}}/mnt"
-    sudo umount "{{base_dir}}/mnt"
+    just generate-bootable-image
+    if [[ "$?" == "0" ]]; then
+        echo "Mounting the bootable image."
+        mkdir -p "{{base_dir}}/mnt"
+        sudo mount -o loop "{{base_dir}}/bootable.img" "{{base_dir}}/mnt"
+        echo "Beginning iso conversion process."
+        sudo xorriso -as mkisofs -o "{{base_dir}}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "{{base_dir}}/mnt"
+        sudo umount "{{base_dir}}/mnt"
+        echo "sparrow.iso has been generated. It is located at {{base_dir}}/sparrow.iso"
+    else
+        echo "a core recipe failed with a error, cannot proceed."
+        exit 121
+    fi
 
 lint:
     #!/usr/bin/env bash

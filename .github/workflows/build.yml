@@ -275,14 +275,19 @@ jobs:
         run: |
           mkdir -p output
           OUTPUT_DIRECTORY="$(realpath output)"
+          echo "Preparing output transfer"
           if [[ "${{ matrix.disk-type }}" == "qcow2" ]]; then
+            echo "Type: qcow2"
             mv sparrow.qcow2 output/sparrow-$ARCH.qcow2
             (cd output && sha256sum sparrow-$ARCH.qcow2 | tee sparrow-$ARCH.qcow2-CHECKSUM)
           elif [[ "${{ matrix.disk-type }}" == "iso" ]]; then
+            echo "Type: iso"
             mv sparrow.iso output/sparrow-$ARCH.iso
             (cd output && sha256sum sparrow-$ARCH.iso | tee sparrow-$ARCH.iso-CHECKSUM)
           fi
           echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
+          echo "This is what should be provided from the output directory:"
+          ls output
 
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
