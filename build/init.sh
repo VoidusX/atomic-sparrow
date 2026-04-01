@@ -49,6 +49,9 @@ cd /
 # we need to remove the vanilla kernel first, to prevent loss of the initramfs from dracut.
 #install linux-cachyos linux-cachyos-headers
 
+# Podman is missing in the base image as of march 19th, this corrects that.
+install podman
+
 # Install desktop shell
 install-alt dms-shell-bin
 

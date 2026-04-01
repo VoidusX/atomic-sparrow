@@ -1,0 +1,53 @@
+name: Build Sparrow (Git Commit)
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 20 * * *"
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yaml
+    secrets: inherit
+    with:
+      image-name: "${{ github.event.repository.name }}"
+      image-desc: "A hyprland atomic-based image at minimal scale."
+      image-keywords: "bootc,arch,archlinux,sparrow,hyprland"
+      image-logo: "https://avatars.githubusercontent.com/u/47302555?s=400&u=cb912a5db49aee164a609a0fb4967d2d8170feb9&v=4"
+      platforms: amd64
+      rechunk: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-iso:
+    uses: ./.github/workflows/reusable-disk-build.yaml
+    secrets: inherit
+    needs: [build]
+    with:
+      image-name: "${{ github.event.repository.name }}"
+      image-tag: "latest"
+      disk-type: "iso"
+      platform: "amd64"
+
+  build-qcow:
+    uses: ./.github/workflows/reusable-disk-build.yaml
+    secrets: inherit
+    needs: [build]
+    with:
+      image-name: "${{ github.event.repository.name }}"
+      image-tag: "latest"
+      disk-type: "qcow"
+      platform: "amd64"

@@ -1,10 +1,10 @@
 ---
-name: Build Sparrow (Release)
+name: Build Sparrow (Preview)
 
 on:
   release:
     types:
-      - published
+      - prereleased
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -12,7 +12,6 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ !github.event.release.prerelease }}
     uses: ./.github/workflows/reusable-build.yaml
     secrets: inherit
     with:
@@ -26,7 +25,6 @@ jobs:
       publish: true
 
   build-iso:
-    if: ${{ !github.event.release.prerelease }}
     uses: ./.github/workflows/reusable-disk-build.yaml
     secrets: inherit
     needs: [build]
@@ -38,7 +36,6 @@ jobs:
       upload-to-release: true
 
   build-qcow:
-    if: ${{ !github.event.release.prerelease }}
     uses: ./.github/workflows/reusable-disk-build.yaml
     secrets: inherit
     needs: [build]
@@ -49,72 +46,67 @@ jobs:
       platform: "amd64"
       upload-to-release: true
 
-  latest-tag:
-    name: Update latest and stable tags
+  update-preview-tag:
+    name: Update preview tags
     needs: [build, build-iso, build-qcow]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Update tags
+      - name: Update preview tags
         uses: actions/github-script@a26ff4c5d049a9d0fb9505415b51cf05c01e2f93 # v7
         with:
           script: |
             const release = context.payload.release;
             const tagName = release.tag_name;
             
-            // Extract version from tag (e.g., v0.10.5 -> 0.10)
+            // Extract version from tag (e.g., v0.8.0-alpha.1 -> 0.8)
             const versionMatch = tagName.match(/^v(\d+\.\d+)/);
             if (!versionMatch) {
               core.warning(`Tag ${tagName} does not match version pattern`);
               return;
             }
-            const majorMinor = versionMatch[1];
+            const version = versionMatch[1];
             
-            // Create major.minor tag for pinning (e.g., 0.10)
+            // Create major.minor tag for pinning (preview_X.Y)
+            const previewTag = `preview_${version}`;
+            
             try {
+              // Try to update existing tag
               await github.rest.git.updateRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `tags/${majorMinor}`,
+                ref: `tags/${previewTag}`,
                 sha: release.target_commitish,
                 force: true
               });
-              console.log(`Updated ${majorMinor} to ${tagName}`);
+              console.log(`Updated ${previewTag} to ${tagName}`);
             } catch (err) {
               if (err.status === 422) {
+                // Create new tag
                 await github.rest.git.createRef({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  ref: `refs/tags/${majorMinor}`,
+                  ref: `refs/tags/${previewTag}`,
                   sha: release.target_commitish
                 });
-                console.log(`Created ${majorMinor} pointing to ${tagName}`);
+                console.log(`Created ${previewTag} pointing to ${tagName}`);
               } else {
                 throw err;
               }
             }
             
-            // Get all releases
+            // Get all prerelease tags
             const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
             
-            // Filter stable and prerelease
-            const stableReleases = releases.filter(r => !r.prerelease);
-            const prereleases = releases.filter(r => r.prerelease);
-            
-            // Determine what 'latest' should point to:
-            // 1. If stable releases exist → latest stable
-            // 2. If no stable but prereleases exist → latest prerelease
-            // 3. If no releases at all → unstable
-            let latestTarget;
-            
-            if (stableReleases.length > 0) {
-              // Sort stable by semver
-              stableReleases.sort((a, b) => {
+            // Filter and sort prereleases by semver
+            const prereleases = releases
+              .filter(r => r.prerelease)
+              .sort((a, b) => {
                 const aVer = a.tag_name.replace('v', '').split('.').map(Number);
                 const bVer = b.tag_name.replace('v', '').split('.').map(Number);
                 for (let i = 0; i < 3; i++) {
@@ -122,46 +114,33 @@ jobs:
                 }
                 return 0;
               });
-              latestTarget = stableReleases[0];
-              console.log(`Using latest stable: ${latestTarget.tag_name}`);
-            } else if (prereleases.length > 0) {
-              // Sort prereleases by semver
-              prereleases.sort((a, b) => {
-                const aVer = a.tag_name.replace('v', '').split('.').map(Number);
-                const bVer = b.tag_name.replace('v', '').split('.').map(Number);
-                for (let i = 0; i < 3; i++) {
-                  if (aVer[i] !== bVer[i]) return bVer[i] - aVer[i];
-                }
-                return 0;
-              });
-              latestTarget = prereleases[0];
-              console.log(`No stable releases, using latest pre-release: ${latestTarget.tag_name}`);
-            } else {
-              // No releases at all - fallback to unstable
-              core.warning('No release builds are available, falling back to use image builds from unstable.');
-              latestTarget = release;
-              console.log('Falling back to unstable');
+            
+            const latestPrerelease = prereleases[0];
+            if (!latestPrerelease) {
+              // Cannot fall back to unstable - latest-preview must not be set
+              core.warning('No pre-releases exist, latest-preview will not be updated.');
+              return;
             }
             
-            // Update 'latest' tag
+            // Update latest-preview tag
             try {
               await github.rest.git.updateRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: 'tags/latest',
-                sha: latestTarget.target_commitish,
+                ref: 'tags/latest-preview',
+                sha: latestPrerelease.target_commitish,
                 force: true
               });
-              console.log(`Updated 'latest' to ${latestTarget.tag_name || 'unstable'}`);
+              console.log(`Updated 'latest-preview' to ${latestPrerelease.tag_name}`);
             } catch (err) {
               if (err.status === 422) {
                 await github.rest.git.createRef({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  ref: 'refs/tags/latest',
-                  sha: latestTarget.target_commitish
+                  ref: 'refs/tags/latest-preview',
+                  sha: latestPrerelease.target_commitish
                 });
-                console.log(`Created 'latest' tag pointing to ${latestTarget.tag_name || 'unstable'}`);
+                console.log(`Created 'latest-preview' tag pointing to ${latestPrerelease.tag_name}`);
               } else {
                 throw err;
               }

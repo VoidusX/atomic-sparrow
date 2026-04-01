@@ -1,0 +1,109 @@
+---
+name: Build Unstable Disk Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      disk-type:
+        description: "Type of disk image to build"
+        required: true
+        type: choice
+        options:
+          - iso
+          - qcow
+      platform:
+        description: "Platform to build for"
+        required: false
+        type: choice
+        default: amd64
+        options:
+          - amd64
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-disk:
+    name: Build Unstable Disk Image (${{ inputs.disk-type }})
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Prepare environment
+        run: |
+          echo "IMAGE_NAME=${{ github.event.repository.name }}" >> ${GITHUB_ENV}
+          echo "IMAGE_REGISTRY=ghcr.io/${{ github.repository_owner }}" >> ${GITHUB_ENV}
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "DISK_TYPE=${{ inputs.disk-type }}" >> ${GITHUB_ENV}
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
+          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Just
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils xorriso libguestfs-tools
+
+      - name: Build image
+        run: |
+          sudo $(which just) build "${{ github.event.repository.name }}"
+
+      - name: Build raw disk image
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+          just disk-image "${{ github.event.repository.name }}" "latest" "${GITHUB_WORKSPACE}" "ext4"
+
+      - name: Inject post-install config
+        run: |
+          # Create minimal config - flatpaks come from list.toml
+          cat > /tmp/post-install.conf << 'EOF'
+          create_test_user = true
+          EOF
+          
+          guestfish --add "${GITHUB_WORKSPACE}/bootable.img" --rw \
+            run \
+            mkdir-p /etc/sparrow \
+            copy-in /tmp/post-install.conf /etc/sparrow/post-install.conf
+
+      - name: Convert to QCOW2
+        if: inputs.disk-type == 'qcow'
+        run: |
+          qemu-img convert -O qcow2 "${GITHUB_WORKSPACE}/bootable.img" "${GITHUB_WORKSPACE}/disk.image"
+
+      - name: Create ISO
+        if: inputs.disk-type == 'iso'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/mnt"
+          sudo mount -o loop "${GITHUB_WORKSPACE}/bootable.img" "${GITHUB_WORKSPACE}/mnt"
+          sudo xorriso -as mkisofs \
+            -iso-level 3 \
+            -full-iso9660-filenames \
+            -b isolinux/isolinux.bin \
+            -c isolinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -output "${GITHUB_WORKSPACE}/disk.image" \
+            "${GITHUB_WORKSPACE}/mnt"
+          sudo umount "${GITHUB_WORKSPACE}/mnt"
+
+      - name: Upload disk image and checksums
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v5
+        with:
+          name: ${{ github.event.repository.name }}-unstable-${{ inputs.disk-type }}-${{ inputs.platform }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            disk.image
+            disk.image.sha256

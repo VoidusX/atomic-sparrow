@@ -1,0 +1,167 @@
+---
+name: Build Disk Image
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "The name of the image to build disk images from"
+        required: true
+        type: string
+      image-tag:
+        description: "The tag of the image to pinpoint"
+        required: true
+        type: string
+      disk-type:
+        description: "The type of disk image that should be built (iso, qcow)"
+        required: false
+        type: string
+        default: "iso"
+      platform:
+        description: "The platform to build for"
+        required: false
+        type: string
+        default: "amd64"
+      upload-to-release:
+        description: "Upload to GitHub release assets"
+        required: false
+        type: boolean
+        default: false
+      enable-test-user:
+        description: "Enable test user for VM testing"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  DEFAULT_TAG: "${{ inputs.image-tag }}"
+  IMAGE_NAME: "${{ inputs.image-name }}"
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  PLATFORM: "${{ inputs.platform }}"
+  TAG: "${{ inputs.image-tag }}"
+  CI: "true"
+
+jobs:
+  disk_build:
+    name: Build Disk Image (${{ inputs.disk-type }})
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Prepare environment
+        run: |
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "DISK_TYPE=${{ inputs.disk-type }}" >> ${GITHUB_ENV}
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
+          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Just
+        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils xorriso libguestfs-tools
+
+      - name: Pull image
+        run: |
+          CI=true TAG="${IMAGE_TAG}" PLATFORM="${PLATFORM}" sudo $(which just) build "${IMAGE_NAME}"
+
+      - name: Build raw disk image
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+          just disk-image "${IMAGE_NAME}" "${IMAGE_TAG}" "${GITHUB_WORKSPACE}" "ext4"
+
+      - name: Inject post-install config
+        if: inputs.enable-test-user
+        run: |
+          # Create minimal config - flatpaks come from list.toml
+          cat > /tmp/post-install.conf << 'EOF'
+          create_test_user = true
+          EOF
+          
+          guestfish --add "${GITHUB_WORKSPACE}/bootable.img" --rw \
+            run \
+            mkdir-p /etc/sparrow \
+            copy-in /tmp/post-install.conf /etc/sparrow/post-install.conf
+
+      - name: Convert to QCOW2
+        if: inputs.disk-type == 'qcow'
+        run: |
+          qemu-img convert -O qcow2 "${GITHUB_WORKSPACE}/bootable.img" "${GITHUB_WORKSPACE}/disk.image"
+
+      - name: Create ISO
+        if: inputs.disk-type == 'iso'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/mnt"
+          sudo mount -o loop "${GITHUB_WORKSPACE}/bootable.img" "${GITHUB_WORKSPACE}/mnt"
+          sudo xorriso -as mkisofs \
+            -iso-level 3 \
+            -full-iso9660-filenames \
+            -b isolinux/isolinux.bin \
+            -c isolinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -output "${GITHUB_WORKSPACE}/disk.image" \
+            "${GITHUB_WORKSPACE}/mnt"
+          sudo umount "${GITHUB_WORKSPACE}/mnt"
+
+      - name: Generate checksums
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+          sha256sum disk.image > disk.image.sha256
+          echo "checksum=$(sha256sum disk.image | cut -d' ' -f1)" >> ${GITHUB_OUTPUT}
+
+      - name: Upload disk image and checksums
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v5
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ inputs.disk-type }}-${{ env.PLATFORM }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            disk.image
+            disk.image.sha256
+
+      - name: Upload to Release
+        if: inputs.upload-to-release
+        uses: actions/github-script@a26ff4c5d049a9d0fb9505415b51cf05c01e2f93 # v7
+        with:
+          script: |
+            const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: '${{ env.IMAGE_NAME }}-${{ inputs.disk-type }}-${{ env.PLATFORM }}'
+            });
+            
+            if (artifacts.artifacts.length > 0) {
+              const artifact = artifacts.artifacts[0];
+              const { data: zip } = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip'
+              });
+              
+              const fs = require('fs');
+              const path = require('path');
+              const ext = '${{ inputs.disk-type }}' === 'iso' ? 'iso' : 'qcow2';
+              const filename = '${{ env.IMAGE_NAME }}-${{ env.PLATFORM }}.' + ext;
+              const filepath = path.join(process.cwd(), filename);
+              fs.writeFileSync(filepath, Buffer.from(zip));
+              
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: context.payload.release.id,
+                name: filename,
+                data: fs.readFileSync(filepath)
+              });
+            }

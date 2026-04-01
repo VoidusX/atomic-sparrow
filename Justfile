@@ -1,22 +1,21 @@
 image_name := env("IMAGE_NAME", "atomic-sparrow")
 image_tag := env("DEFAULT_TAG", "latest")
 image_registry := env("IMAGE_REGISTRY", "ghcr.io")
-
 base_dir := env("BUILD_BASE_DIR", ".")
 filesystem := env("BUILD_FILESYSTEM", "ext4")
 selinux := env("BUILD_SELINUX", "true")
 
-ci := env("CI", "false")
 tag := env("TAG", image_tag)
 platform := env("PLATFORM", "amd64")
+
 
 options := if selinux == "true" { "-v /var/lib/containers:/var/lib/containers:Z -v /etc/containers:/etc/containers:Z -v /sys/fs/selinux:/sys/fs/selinux --security-opt label=type:unconfined_t" } else { "-v /var/lib/containers:/var/lib/containers -v /etc/containers:/etc/containers" }
 container_runtime := env("CONTAINER_RUNTIME", `command -v podman >/dev/null 2>&1 && echo podman || echo docker`)
 
-build-containerfile $image_name=image_name:
-    sudo {{container_runtime}} build -f Containerfile -t "${image_name}:latest" .
+build $image_name=image_name:
+    sudo {{container_runtime}} build -f {{image_name}}/Containerfile -t "${image_name}:latest" .
 
-bootc *ARGS:
+bootc $image_name=image_name $image_tag=image_tag *ARGS:
     sudo {{container_runtime}} run \
         --rm --privileged --pid=host \
         -it \
@@ -24,96 +23,22 @@ bootc *ARGS:
         -v /dev:/dev \
         -e RUST_LOG=debug \
         -v "{{base_dir}}:/data" \
-        "{{image_name}}:{{image_tag}}" bootc {{ARGS}}
+        "${image_name}:${image_tag}" bootc {{ARGS}}
 
-generate-bootable-image $base_dir=base_dir $filesystem=filesystem:
+disk-image $image_name=image_name $image_tag=image_tag $base_dir=base_dir $filesystem=filesystem:
     #!/usr/bin/env bash
-    if [[ "{{ci}}" == "true" ]]; then
-        CI_REGISTRY_LOWER=$(echo "{{image_registry}}" | tr '[:upper:]' '[:lower:]')
-        CI_NAME_LOWER=$(echo "{{image_name}}" | tr '[:upper:]' '[:lower:]')
-        CI_IMAGE="${CI_REGISTRY_LOWER}/${CI_NAME_LOWER}:{{tag}}"
-        echo "Pulling CI image: ${CI_IMAGE} with arch: linux/{{platform}}"
-        sudo {{container_runtime}} pull --platform "linux/{{platform}}" "${CI_IMAGE}" || true
-    else
-        echo "Using local image."
-        CI_IMAGE="{{image_name}}:latest"
+    if [ ! -e "${base_dir}/bootable.img" ] ; then
+        fallocate -l 20G "${base_dir}/bootable.img"
     fi
+    just bootc $image_name $image_tag install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe --bootloader systemd
 
-    echo "Creating empty bootable image."
-    if [ ! -e "{{base_dir}}/bootable.img" ] ; then
-        fallocate -l 20G "{{base_dir}}/bootable.img"
-    fi
-    echo "SELinux: {{selinux}}"
-    echo "Container Runtime: {{container_runtime}}"
-    echo "Filesystem Type: {{filesystem}}"
-    echo "Sparrow Version: {{image_tag}}"
-    echo "Image Available: $([ -f "{{base_dir}}/bootable.img" ] && echo "Y" || echo "N")"
-    if [ ! -f "{{base_dir}}/bootable.img" ]; then
-        echo "Bootable image failed to generate, recipe terminated."
-        exit 120
-    fi
-
-    sudo {{container_runtime}} run \
-        --rm --privileged --pid=host \
-        {{options}} \
-        -v /dev:/dev \
-        -e RUST_LOG=debug \
-        -v "{{base_dir}}:/data" \
-        "${CI_IMAGE}" bootc install to-disk --composefs-backend --via-loopback /data/bootable.img --filesystem "{{filesystem}}" --wipe --bootloader systemd
-    if [[ "$?" == "0" ]]; then
-        echo "sparrow/{{platform}} has been installed to bootable image. The image is located at: {{base_dir}}/bootable.img"
-    else
-        echo "failed to build bootable image, error code: $?"
-        exit $?
-    fi
-
-build-qcow2 $base_dir=base_dir:
+rechunk $image_name=image_name:
     #!/usr/bin/env bash
-    just generate-bootable-image
-    if [[ "$?" == "0" ]]; then
-        echo "Beginning qcow2 conversion process."
-        qemu-img convert -O qcow2 "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.qcow2"
-        echo "sparrow.qcow2 has been generated. It is located at {{base_dir}}/sparrow.qcow2"
-    else
-        echo "a core recipe failed with a error, cannot proceed."
-        exit 121
-    fi
-
-build-raw $base_dir=base_dir:
-    #!/usr/bin/env bash
-    just generate-bootable-image || (echo "a core recipe failed with a error, cannot proceed." && exit 121)
-    cp "{{base_dir}}/bootable.img" "{{base_dir}}/sparrow.raw"
-
-build-iso $base_dir=base_dir:
-    #!/usr/bin/env bash
-    just generate-bootable-image
-    if [[ "$?" == "0" ]]; then
-        echo "Mounting the bootable image."
-        mkdir -p "{{base_dir}}/mnt"
-        sudo mount -o loop "{{base_dir}}/bootable.img" "{{base_dir}}/mnt"
-        echo "Beginning iso conversion process."
-        sudo xorriso -as mkisofs -o "{{base_dir}}/sparrow.iso" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table "{{base_dir}}/mnt"
-        sudo umount "{{base_dir}}/mnt"
-        echo "sparrow.iso has been generated. It is located at {{base_dir}}/sparrow.iso"
-    else
-        echo "a core recipe failed with a error, cannot proceed."
-        exit 121
-    fi
-
-lint:
-    #!/usr/bin/env bash
-    command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck not found"; exit 1; }
-    find . -iname '*.sh' -type f -exec shellcheck {} \;
-
-format:
-    #!/usr/bin/env bash
-    command -v shfmt >/dev/null 2>&1 || { echo "shfmt not found"; exit 1; }
-    find . -iname '*.sh' -type f -exec shfmt -w {} \;
-
-check:
-    #!/usr/bin/env bash
-    just --check
-
-fix:
-    #!/usr/bin/env bash
-    just --fmt
+    export CHUNKAH_CONFIG_STR="$(podman inspect "${image_name}")"
+    podman run --rm "--mount=type=image,src=${image_name},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build --label ostree.bootable=1 --compressed --max-layers 128 | \
+        podman load | \
+        sort -n | \
+        head -n1 | \
+        cut -d, -f2 | \
+        cut -d: -f3 | \
+        xargs -I{} podman tag {} "${image_name}"

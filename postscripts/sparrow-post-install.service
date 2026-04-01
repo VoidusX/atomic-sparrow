@@ -1,0 +1,14 @@
+[Unit]
+Description=Sparrow Post-Install Automation
+After=multi-user.target
+Before=greetd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/share/sparrow/post-install/post-install.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

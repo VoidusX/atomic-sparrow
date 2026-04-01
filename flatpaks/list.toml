@@ -1,0 +1,53 @@
+# This flatpak list is read by postinstall scripts and the user session setup program.
+## It is expected that flathub is enabled from either sources, otherwise apps listed here will not work.
+
+## System is where essential applications take place excluding the dank material shell apps like it's configuration.
+[system]
+core_apps = [
+    "app.zen_browser.zen"
+    "io.github.giantpinkrobots.varia"
+    "io.github.debasish_patra_1987.linuxthemestore"
+    "io.github.flattool.Warehouse"
+    "org.kde.dolphin"
+    "io.github.kolunmi.Bazaar"
+    "com.github.tchx84.Flatseal"
+    "io.missioncenter.MissionCenter"
+    "org.gnome.FileRoller"
+    "org.gnome.Decibels"
+    "org.gnome.Showtime"
+    "org.gnome.TextEditor"
+]
+
+## Optional applications that are not as essential are placed below here.
+[user]
+allow_in_session_setup = true # let session setup allow users to pick their apps?
+session_setup_excludes = [] # categories that the session setup will not show.
+
+[user.productivity]
+include = true
+apps = [
+    "org.onlyoffice.desktopeditors"
+    "io.github.hkdb.Aerion"
+]
+
+[user.security]
+include = true
+apps = [
+    "com.bitwarden.desktop"
+    "io.ente.auth"
+]
+
+[user.development]
+include = false
+apps = [
+    "com.ranfdev.DistroShelf"
+    "org.virt_manager.virt-manager"
+    "dev.zed.Zed"
+]
+
+[user.gaming]
+include = false
+apps = [
+    "com.vysp3r.ProtonPlus"
+    "com.valvesoftware.Steam"
+]
