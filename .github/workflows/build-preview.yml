@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/reusable-build.yaml
+    uses: ./.github/workflows/reusable-build.yml
     secrets: inherit
     with:
       image-name: "${{ github.event.repository.name }}"
@@ -25,7 +25,7 @@ jobs:
       publish: true
 
   build-iso:
-    uses: ./.github/workflows/reusable-disk-build.yaml
+    uses: ./.github/workflows/reusable-disk-build.yml
     secrets: inherit
     needs: [build]
     with:
@@ -36,7 +36,7 @@ jobs:
       upload-to-release: true
 
   build-qcow:
-    uses: ./.github/workflows/reusable-disk-build.yaml
+    uses: ./.github/workflows/reusable-disk-build.yml
     secrets: inherit
     needs: [build]
     with:
@@ -59,7 +59,7 @@ jobs:
           script: |
             const release = context.payload.release;
             const tagName = release.tag_name;
-            
+
             // Extract version from tag (e.g., v0.8.0-alpha.1 -> 0.8)
             const versionMatch = tagName.match(/^v(\d+\.\d+)/);
             if (!versionMatch) {
@@ -67,10 +67,10 @@ jobs:
               return;
             }
             const version = versionMatch[1];
-            
+
             // Create major.minor tag for pinning (preview_X.Y)
             const previewTag = `preview_${version}`;
-            
+
             try {
               // Try to update existing tag
               await github.rest.git.updateRef({
@@ -95,14 +95,14 @@ jobs:
                 throw err;
               }
             }
-            
+
             // Get all prerelease tags
             const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             // Filter and sort prereleases by semver
             const prereleases = releases
               .filter(r => r.prerelease)
@@ -114,14 +114,14 @@ jobs:
                 }
                 return 0;
               });
-            
+
             const latestPrerelease = prereleases[0];
             if (!latestPrerelease) {
               // Cannot fall back to unstable - latest-preview must not be set
               core.warning('No pre-releases exist, latest-preview will not be updated.');
               return;
             }
-            
+
             // Update latest-preview tag
             try {
               await github.rest.git.updateRef({

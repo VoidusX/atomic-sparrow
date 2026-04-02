@@ -13,7 +13,7 @@ concurrency:
 jobs:
   build:
     if: ${{ !github.event.release.prerelease }}
-    uses: ./.github/workflows/reusable-build.yaml
+    uses: ./.github/workflows/reusable-build.yml
     secrets: inherit
     with:
       image-name: "${{ github.event.repository.name }}"
@@ -27,7 +27,7 @@ jobs:
 
   build-iso:
     if: ${{ !github.event.release.prerelease }}
-    uses: ./.github/workflows/reusable-disk-build.yaml
+    uses: ./.github/workflows/reusable-disk-build.yml
     secrets: inherit
     needs: [build]
     with:
@@ -39,7 +39,7 @@ jobs:
 
   build-qcow:
     if: ${{ !github.event.release.prerelease }}
-    uses: ./.github/workflows/reusable-disk-build.yaml
+    uses: ./.github/workflows/reusable-disk-build.yml
     secrets: inherit
     needs: [build]
     with:
@@ -62,7 +62,7 @@ jobs:
           script: |
             const release = context.payload.release;
             const tagName = release.tag_name;
-            
+
             // Extract version from tag (e.g., v0.10.5 -> 0.10)
             const versionMatch = tagName.match(/^v(\d+\.\d+)/);
             if (!versionMatch) {
@@ -70,7 +70,7 @@ jobs:
               return;
             }
             const majorMinor = versionMatch[1];
-            
+
             // Create major.minor tag for pinning (e.g., 0.10)
             try {
               await github.rest.git.updateRef({
@@ -94,24 +94,24 @@ jobs:
                 throw err;
               }
             }
-            
+
             // Get all releases
             const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             // Filter stable and prerelease
             const stableReleases = releases.filter(r => !r.prerelease);
             const prereleases = releases.filter(r => r.prerelease);
-            
+
             // Determine what 'latest' should point to:
             // 1. If stable releases exist → latest stable
             // 2. If no stable but prereleases exist → latest prerelease
             // 3. If no releases at all → unstable
             let latestTarget;
-            
+
             if (stableReleases.length > 0) {
               // Sort stable by semver
               stableReleases.sort((a, b) => {
@@ -142,7 +142,7 @@ jobs:
               latestTarget = release;
               console.log('Falling back to unstable');
             }
-            
+
             // Update 'latest' tag
             try {
               await github.rest.git.updateRef({

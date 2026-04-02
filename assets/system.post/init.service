@@ -1,0 +1,15 @@
+[Unit]
+Description=Sparrow First-Boot Setup
+After=multi-user.target
+Requires=multi-user.target
+ConditionFirstBoot=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/share/sparrow/postscripts/init.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

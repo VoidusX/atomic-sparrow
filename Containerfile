@@ -6,10 +6,6 @@ COPY build /
 FROM scratch AS assets
 COPY assets /
 
-# Post-install scripts (available at runtime, not during build)
-FROM scratch AS postinstall
-COPY post-install /
-
 # Base Image (Arch-based bootc)
 # arch-bootc handles bootc integration, ostree, and base system setup
 FROM ghcr.io/bootcrew/arch-bootc:latest
@@ -36,16 +32,11 @@ RUN rm /opt && mkdir /opt
 
 RUN --mount=type=bind,from=assets,source=/,target=/assets \
     --mount=type=bind,from=builder,source=/,target=/builder \
-    --mount=type=bind,from=postinstall,source=/,target=/postinstall \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     cp /builder/aliases.sh /tmp/ && \
     mkdir -p /imageAssets && cp -r /assets/* /imageAssets/ && \
-    mkdir -p /usr/share/sparrow/postscripts && \
-    cp -r /postinstall/* /usr/share/sparrow/postscripts/ && \
-    cp flatpaks/list.toml /usr/share/sparrow/postscripts/flatpaks_list.toml && \
-    cp /usr/share/sparrow/postscripts/sparrow-post-install.service /etc/systemd/system/ && \
     /builder/init.sh
 
 # https://bootc-dev.github.io/bootc/bootc-images.html#standard-metadata-for-bootc-compatible-images

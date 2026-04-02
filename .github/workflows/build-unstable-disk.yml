@@ -64,17 +64,12 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           just disk-image "${{ github.event.repository.name }}" "latest" "${GITHUB_WORKSPACE}" "ext4"
 
-      - name: Inject post-install config
-        run: |
-          # Create minimal config - flatpaks come from list.toml
-          cat > /tmp/post-install.conf << 'EOF'
-          create_test_user = true
-          EOF
-          
-          guestfish --add "${GITHUB_WORKSPACE}/bootable.img" --rw \
-            run \
-            mkdir-p /etc/sparrow \
-            copy-in /tmp/post-install.conf /etc/sparrow/post-install.conf
+      - name: Setup session
+        uses: ./.github/workflows/reusable-session.yml
+        with:
+          disk-image: "${GITHUB_WORKSPACE}/bootable.img"
+          mount-point: "${GITHUB_WORKSPACE}/mnt"
+          templates-dir: "${GITHUB_WORKSPACE}/templates/livecd"
 
       - name: Convert to QCOW2
         if: inputs.disk-type == 'qcow'

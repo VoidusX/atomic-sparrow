@@ -1,0 +1,40 @@
+---
+name: Setup Session
+on:
+  workflow_call:
+    inputs:
+      disk-image:
+        description: "Path to the disk image"
+        required: true
+        type: string
+      mount-point:
+        description: "Mount point for the disk image"
+        required: true
+        type: string
+      templates-dir:
+        description: "Path to templates directory"
+        required: true
+        type: string
+
+jobs:
+  setup-session:
+    name: Setup Session User
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mount disk image
+        run: |
+          sudo mkdir -p "${{ inputs.mount-point }}"
+          sudo mount -o loop "${{ inputs.disk-image }}" "${{ inputs.mount-point }}"
+
+      - name: Create test user
+        run: |
+          sudo mkdir -p "${{ inputs.mount-point }}/usr/lib/sysusers.d"
+          sudo cp "${{ inputs.templates-dir }}/test-user.conf" "${{ inputs.mount-point }}/usr/lib/sysusers.d/"
+          sudo mkdir -p "${{ inputs.mount-point }}/etc/sudoers.d"
+          sudo cp "${{ inputs.templates-dir }}/wheel-nopasswd" "${{ inputs.mount-point }}/etc/sudoers.d/wheel"
+          sudo chmod 440 "${{ inputs.mount-point }}/etc/sudoers.d/wheel"
+          sudo systemd-sysusers --root="${{ inputs.mount-point }}"
+
+      - name: Unmount disk image
+        run: |
+          sudo umount "${{ inputs.mount-point }}"

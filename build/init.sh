@@ -6,6 +6,7 @@ source /tmp/aliases.sh
 skel="/etc/skel"
 assets="/imageAssets"
 shared="/usr/share"
+system_services="/etc/systemd/system"
 
 # Setup repositories
 pacman-key --init
@@ -83,7 +84,18 @@ add "${shared}/greetd"
 copy "${greetd_skeleton}/config.toml" "${shared}/greetd/default-config.toml"
 rm "${greetd_skeleton}/config.toml"
 copy "${assets}/greetd.toml" "${greetd_skeleton}/config.toml"
+copy "${assets}/greetd.session/session_registry.sh" "${greetd_skeleton}/session.sh"
+scriptify "${greetd_skeleton}/session.sh"
 #copy-config "${assets}/greetd.session/"* "${greetd_skeleton}/" this has been replaced by dms
+
+# Setup post-install service to enable after
+copy "${assets}/system.post/init.service" "${system_services}/sparrow-init.service"
+copy "${assets}/system.post/init.sh" "${shared}/sparrow/postscripts/init.sh"
+scriptify "${shared}/sparrow/postscripts/init.sh"
+
+# Flatpak list goes into /etc because it should only exist on livecd experience
+add "/etc/sparrow"
+copy "${assets}/flatpak_list.toml" "/etc/sparrow/installation.flatpaks.toml"
 
 # Remove AUR repos/helpers before enabling services (keep out of runtime)
 drop paru
@@ -109,6 +121,7 @@ systemd-tmpfiles --clean # ensure that the detatched build user is removed from 
 
 # Enable services
 insert greetd.service
+insert sparrow-init.service
 insert podman.socket
 ## dms cant be enabled because it is a user service, this requires to be set up in the user compositor.
 # Requires to be enabled in post-install.

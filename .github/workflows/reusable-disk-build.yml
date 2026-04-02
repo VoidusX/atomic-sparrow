@@ -26,11 +26,6 @@ on:
         required: false
         type: boolean
         default: false
-      enable-test-user:
-        description: "Enable test user for VM testing"
-        required: false
-        type: boolean
-        default: false
 
 env:
   DEFAULT_TAG: "${{ inputs.image-tag }}"
@@ -79,18 +74,12 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           just disk-image "${IMAGE_NAME}" "${IMAGE_TAG}" "${GITHUB_WORKSPACE}" "ext4"
 
-      - name: Inject post-install config
-        if: inputs.enable-test-user
-        run: |
-          # Create minimal config - flatpaks come from list.toml
-          cat > /tmp/post-install.conf << 'EOF'
-          create_test_user = true
-          EOF
-          
-          guestfish --add "${GITHUB_WORKSPACE}/bootable.img" --rw \
-            run \
-            mkdir-p /etc/sparrow \
-            copy-in /tmp/post-install.conf /etc/sparrow/post-install.conf
+      - name: Setup session
+        uses: ./.github/workflows/reusable-session.yml
+        with:
+          disk-image: "${GITHUB_WORKSPACE}/bootable.img"
+          mount-point: "${GITHUB_WORKSPACE}/mnt"
+          templates-dir: "${GITHUB_WORKSPACE}/templates/livecd"
 
       - name: Convert to QCOW2
         if: inputs.disk-type == 'qcow'
@@ -140,7 +129,7 @@ jobs:
               repo: context.repo.repo,
               name: '${{ env.IMAGE_NAME }}-${{ inputs.disk-type }}-${{ env.PLATFORM }}'
             });
-            
+
             if (artifacts.artifacts.length > 0) {
               const artifact = artifacts.artifacts[0];
               const { data: zip } = await github.rest.actions.downloadArtifact({
@@ -149,14 +138,14 @@ jobs:
                 artifact_id: artifact.id,
                 archive_format: 'zip'
               });
-              
+
               const fs = require('fs');
               const path = require('path');
               const ext = '${{ inputs.disk-type }}' === 'iso' ? 'iso' : 'qcow2';
               const filename = '${{ env.IMAGE_NAME }}-${{ env.PLATFORM }}.' + ext;
               const filepath = path.join(process.cwd(), filename);
               fs.writeFileSync(filepath, Buffer.from(zip));
-              
+
               await github.rest.repos.uploadReleaseAsset({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

@@ -4,10 +4,5 @@
 vt = 1
 
 [default_session]
-# Start post-install service via systemctl, then continue with greeter
-command = "systemctl start sparrow-post-install.service; dms-greeter --command Hyprland"
-
-# The user to run the command as. The privileges this user must have depends
-# on the greeter. A graphical greeter may for example require the user to be
-# in the `video` group
+command = "/etc/greetd/session_registry.sh"
 user = "greetd"
