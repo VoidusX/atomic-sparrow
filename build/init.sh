@@ -8,6 +8,10 @@ assets="/imageAssets"
 shared="/usr/share"
 system_services="/etc/systemd/system"
 
+# create distro specific directory
+add "${shared}/sparrow"
+sparrow="${shared}/sparrow"
+
 # Setup repositories
 pacman-key --init
 pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
@@ -89,13 +93,14 @@ scriptify "${greetd_skeleton}/session.sh"
 #copy-config "${assets}/greetd.session/"* "${greetd_skeleton}/" this has been replaced by dms
 
 # Setup post-install service to enable after
+add "${sparrow}/postscripts"
 copy "${assets}/system.post/init.service" "${system_services}/sparrow-init.service"
-copy "${assets}/system.post/init.sh" "${shared}/sparrow/postscripts/init.sh"
-scriptify "${shared}/sparrow/postscripts/init.sh"
+copy "${assets}/system.post/init.sh" "${sparrow}/postscripts/init.sh"
+scriptify "${sparrow}/postscripts/init.sh"
 
 # Flatpak list goes into /etc because it should only exist on livecd experience
 add "/etc/sparrow"
-copy "${assets}/flatpak_list.toml" "/etc/sparrow/installation.flatpaks.toml"
+copy "${assets}/flatpaks_list.toml" "/etc/sparrow/installation.flatpaks.toml"
 
 # Remove AUR repos/helpers before enabling services (keep out of runtime)
 drop paru
