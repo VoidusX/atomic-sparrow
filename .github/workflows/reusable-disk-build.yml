@@ -33,6 +33,7 @@ env:
   PLATFORM: "${{ inputs.platform }}"
   TAG: "${{ inputs.image-tag }}"
   CI: "true"
+  BUILD_SELINUX: "false"
 
 jobs:
   disk_build:

@@ -196,7 +196,7 @@ jobs:
   manifest:
     name: Create Manifest
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && inputs.publish && inputs.platforms != 'amd64'
     needs:
       - build_push
     container:
