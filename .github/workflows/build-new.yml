@@ -41,6 +41,7 @@ jobs:
       image-tag: "latest"
       disk-type: "iso"
       platform: "amd64"
+      upload-to-release: false
 
   build-qcow:
     uses: ./.github/workflows/reusable-disk-build.yml
@@ -51,3 +52,4 @@ jobs:
       image-tag: "latest"
       disk-type: "qcow"
       platform: "amd64"
+      upload-to-release: false

@@ -57,7 +57,7 @@ jobs:
       contents: write
     steps:
       - name: Update tags
-        uses: actions/github-script@a26ff4c5d049a9d0fb9505415b51cf05c01e2f93 # v7
+        uses: actions/github-script@v7
         with:
           script: |
             const release = context.payload.release;
