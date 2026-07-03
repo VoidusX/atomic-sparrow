@@ -1,6 +1,7 @@
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS builder
 COPY build /
+COPY .luaurc /
 
 # Isolate assets as a reference for build scripts, only copying what is necessary.
 FROM scratch AS assets
