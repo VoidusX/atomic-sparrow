@@ -17,10 +17,10 @@ is_live_mode() {
 main() {
     if is_live_mode; then
         log "Live mode: autologin test user via dms-shell"
-        exec dms-shell --session Hyprland --user test
+        exec /usr/bin/noctalia-greeter-session --session Hyprland --user test
     else
         log "Normal mode, starting dms-greeter"
-        exec dms-greeter --command Hyprland
+        exec /usr/bin/noctalia-greeter-session --session Hyprland
     fi
 }
 

@@ -1,0 +1,12 @@
+#!/bin/bash
+builduser="oci-build"
+buildperm="${builduser} ALL=(ALL) NOPASSWD: ALL"
+
+if [[ "$1" == "mk" ]]; then
+    useradd -m -s /bin/bash ${builduser}
+    echo '${buildperm}' | tee -a /etc/sudoers
+elif [[ "$1" == "rm" ]]; then
+    grep -v "${buildperm}" /etc/sudoers | tee /etc/sudoers && userdel ${builduser}
+else
+    exit 5
+fi

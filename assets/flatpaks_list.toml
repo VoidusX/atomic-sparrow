@@ -4,7 +4,6 @@
 ## System is where essential applications take place excluding the dank material shell apps like it's configuration.
 [system]
 core_apps = [
-    "app.zen_browser.zen"
     "io.github.giantpinkrobots.varia"
     "io.github.debasish_patra_1987.linuxthemestore"
     "io.github.flattool.Warehouse"
