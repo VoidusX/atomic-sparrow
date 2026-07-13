@@ -14,7 +14,7 @@ hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd(ipc .. " brightness-up"))
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(ipc .. " brightness-down"))
 
 -- Sparrow Defaults
-hl.bind(mainMod .. "+Enter", hl.dsp.exec_cmd("footclient"))
+hl.bind(mainMod .. "+Enter", hl.dsp.exec_cmd("kitty"))
 hl.bind(mainMod .. "+Shift+Enter", hl.dsp.exec_cmd("helium-browser"))
 
 hl.config({
@@ -45,5 +45,4 @@ hl.config({
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("noctalia")
-    hl.exec_cmd("foot --server")
 end)

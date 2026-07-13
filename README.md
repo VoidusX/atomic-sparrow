@@ -1,3 +1,6 @@
+> # THIS PROJECT IS DEPRECATED
+> #### USE THE NEW REPOSITORY REBUILT FROM THE GROUND UP: https://github.com/voidusx/sparrow
+
 # The Sparrow Project
 
 Sparrow is a immutable distribution that stays lightweight, and secure at the same time, it focuses on a simple yet essential goal. The goal to be customizable, scriptable, and extendable; using both secure user-space containers, and a simple/common scripting language for many applications/programs.
