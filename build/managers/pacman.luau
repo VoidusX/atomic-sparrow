@@ -1,6 +1,6 @@
 local proc = require("@lune/process")
 local fs = require("@lune/fs")
-local package_mappings = require("@build/pkgmap/arch.luau")
+local package_mappings = require("../pkgmap/arch.luau")
 
 local packageManager = {}
 local installed_repos = {}

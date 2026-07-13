@@ -1,23 +1,23 @@
 local proc = require("@lune/process")
 local fs = require("@lune/fs")
 local stdio = require("@lune/stdio")
-local repos = require("@build/repos.luau")
-local packages = require("@build/packages.luau")
-local serde_kv = require("@build/serde.kv.luau")
+local repos = require("./repos.luau")
+local packages = require("./packages.luau")
+local serde_kv = require("./serde.kv.luau")
 
 local env = proc.env
 local distro = serde_kv.decode(fs.readFile("/etc/os-release"))
 local distroType = distro.id
-local systemd = require("@build/managers/systemd.luau")
+local systemd = require("./managers/systemd.luau")
 local manager;
 
 -- figure out the package manager of the system.
 if distroType == "arch" then
     print("using pacman")
-    manager = require("@build/managers/pacman.luau")
+    manager = require("./managers/pacman.luau")
 elseif distroType == "fedora" then
     print("using dnf")
-    manager = require("@build/managers/dnf.luau")
+    manager = require("./managers/dnf.luau")
 end
 
 local image_name = env.IMAGE_NAME

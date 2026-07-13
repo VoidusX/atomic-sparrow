@@ -1,7 +1,7 @@
 local proc = require("@lune/process")
 local fs = require("@lune/fs")
 local net = require("@lune/net")
-local package_mappings = require("@build/pkgmap/fedora.luau")
+local package_mappings = require("../pkgmap/fedora.luau")
 
 local packageManager = {}
 local installed_repos = {}
